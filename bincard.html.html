@@ -1,0 +1,2064 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Central Supply Unit - Bin Card System</title>
+    <style>
+        :root {
+            --primary: #0f172a;
+            --primary-gradient: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            --accent: #0284c7;
+            --accent-glow: 0 0 12px rgba(2, 132, 199, 0.4);
+            --bg-main: #f1f5f9;
+            --bg-card: #ffffff;
+            --border-color: #cbd5e1;
+            --text-dark: #0f172a;
+            --text-muted: #64748b;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --radius-lg: 12px;
+            --radius-md: 8px;
+            --radius-sm: 4px;
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.05);
+            --shadow-md: 0 10px 15px -3px rgba(15, 23, 42, 0.08);
+        }
+
+        * { 
+            box-sizing: border-box; 
+            font-family: Arial, Helvetica, sans-serif !important;
+        }
+
+        body {
+            margin: 0;
+            padding: 24px;
+            background-color: var(--bg-main);
+            color: var(--text-dark);
+            line-height: 1.5;
+            min-height: 100vh;
+        }
+
+        /* Navigation Header */
+        .app-header {
+            max-width: 1750px;
+            margin: 0 auto 20px auto;
+            background: var(--primary-gradient);
+            color: #ffffff;
+            padding: 16px 28px;
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-md);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 3px solid var(--accent);
+        }
+
+        .brand-container {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .brand-icon-logo {
+            width: 46px;
+            height: 46px;
+            border-radius: var(--radius-md);
+            background: #ffffff;
+            padding: 2px;
+            border: 1px solid var(--accent);
+            box-shadow: var(--accent-glow);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            object-fit: contain;
+        }
+
+        .brand-title {
+            font-size: 20px;
+            font-weight: bold;
+            letter-spacing: -0.5px;
+            color: #ffffff;
+            margin: 0;
+            text-transform: uppercase;
+        }
+
+        .brand-subtitle {
+            font-size: 11px;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .user-status-bar {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 13px;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 8px 16px;
+            border-radius: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .role-badge {
+            background: var(--accent);
+            color: white;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .perm-badge {
+            background: #334155;
+            color: #38bdf8;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 10px;
+            font-weight: bold;
+            border: 1px solid #0284c7;
+        }
+
+        .shift-badge {
+            background: #334155;
+            color: #ffffff;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: bold;
+        }
+
+        .btn-logout {
+            background: transparent;
+            color: #f87171;
+            border: 1px solid #f87171;
+            padding: 6px 14px;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 12px;
+            transition: all 0.2s;
+        }
+
+        .btn-logout:hover {
+            background: #ef4444;
+            color: white;
+        }
+
+        /* Dashboard Bar */
+        .metrics-grid {
+            max-width: 1750px;
+            margin: 0 auto 20px auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 16px;
+        }
+
+        .metric-card {
+            background: var(--bg-card);
+            padding: 16px 20px;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow-sm);
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .metric-icon {
+            font-size: 20px;
+            width: 42px;
+            height: 42px;
+            border-radius: var(--radius-md);
+            background: #f8fafc;
+            border: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .metric-data h4 {
+            margin: 0;
+            font-size: 11px;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            letter-spacing: 0.5px;
+        }
+
+        .metric-data p {
+            margin: 2px 0 0 0;
+            font-size: 20px;
+            font-weight: bold;
+            color: var(--text-dark);
+        }
+
+        /* App Main Grid Layout */
+        .app-layout {
+            display: flex;
+            gap: 20px;
+            max-width: 1750px;
+            margin: 0 auto;
+            align-items: stretch;
+        }
+
+        .panel-card {
+            background: var(--bg-card);
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow-md);
+        }
+
+        .panel-title {
+            margin: 0 0 16px 0;
+            font-size: 13px;
+            font-weight: bold;
+            color: var(--primary);
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            border-bottom: 2px solid #f1f5f9;
+            padding-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            flex: 0 0 320px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            max-height: calc(100vh - 190px);
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            font-size: 13px;
+            outline: none;
+            background: #f8fafc;
+            margin-bottom: 10px;
+        }
+
+        .search-box input:focus {
+            background: #fff;
+            border-color: var(--accent);
+        }
+
+        .btn-action-secondary {
+            width: 100%;
+            background: #f8fafc;
+            color: var(--text-dark);
+            border: 1px solid var(--border-color);
+            padding: 10px;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 12px;
+            margin-bottom: 8px;
+            transition: all 0.2s;
+        }
+
+        .btn-action-secondary:hover { background: #e2e8f0; }
+
+        .item-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            overflow-y: auto;
+            flex-grow: 1;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            background: #fff;
+        }
+
+        .item-list li {
+            padding: 12px 14px;
+            border-bottom: 1px solid #f1f5f9;
+            cursor: pointer;
+            font-size: 13px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .item-list li:hover { background: #f8fafc; }
+
+        .item-list li.active {
+            background: var(--primary);
+            color: white;
+            font-weight: bold;
+            border-left: 4px solid var(--accent);
+        }
+
+        .item-list li .item-name-text {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            flex: 1;
+        }
+
+        .item-list li .stock-tag {
+            font-size: 10px;
+            background: #e2e8f0;
+            color: var(--text-dark);
+            padding: 3px 7px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+
+        .item-list li.active .stock-tag {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+        }
+
+        .btn-new-item {
+            width: 100%;
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 13px;
+            margin-top: 14px;
+            transition: background 0.2s;
+        }
+
+        .btn-new-item:hover { background: #1e293b; }
+
+        /* Form Controls Panel Layout */
+        .input-panel {
+            flex: 0 0 400px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            overflow-y: auto;
+            max-height: calc(100vh - 190px);
+        }
+
+        .form-section { display: flex; flex-direction: column; gap: 12px; }
+        .form-group { display: flex; flex-direction: column; gap: 5px; }
+
+        .form-group label { 
+            font-size: 11px; 
+            font-weight: bold; 
+            color: var(--text-muted); 
+            text-transform: uppercase; 
+            letter-spacing: 0.5px; 
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .form-group input, .form-group select {
+            width: 100%;
+            height: 38px;
+            padding: 8px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            font-size: 12px;
+            outline: none;
+            background: #f8fafc;
+            box-sizing: border-box;
+        }
+
+        .form-group input:focus, .form-group select:focus {
+            background: #fff;
+            border-color: var(--accent);
+        }
+
+        .form-row-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; width: 100%; }
+        .form-row-3col { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; width: 100%; }
+
+        .btn-add {
+            width: 100%;
+            background: var(--accent);
+            color: white;
+            border: none;
+            height: 42px;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 13px;
+            margin-top: 4px;
+            transition: background 0.2s;
+        }
+
+        .btn-add:hover { background: #0284c7; }
+
+        .btn-delete-card {
+            width: 100%;
+            background: transparent;
+            color: var(--danger);
+            border: 1px dashed var(--danger);
+            padding: 10px;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 12px;
+            margin-top: auto;
+        }
+
+        .btn-delete-card:hover { background: #fef2f2; }
+
+        /* Bin Card Sheet Preview */
+        .preview-panel {
+            flex: 1;
+            padding: 40px;
+            display: flex;
+            flex-direction: column;
+            min-height: 850px;
+            background: #ffffff;
+        }
+
+        .official-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid #000;
+        }
+
+        .header-left-group { display: flex; align-items: flex-start; gap: 12px; }
+        .logo-col-doh { display: flex; align-items: center; justify-content: center; }
+        .logo-col-brhmc { display: flex; flex-direction: column; align-items: center; justify-content: flex-start; }
+
+        .header-logo-img {
+            height: 75px;
+            width: 75px;
+            object-fit: contain;
+            display: block;
+        }
+
+        .iso-subtext-brhmc {
+            font-size: 8.5px;
+            color: #000;
+            text-align: center;
+            margin-top: 4px;
+            font-weight: bold;
+            line-height: 1.15;
+            white-space: nowrap;
+        }
+
+        .header-text-center {
+            text-align: center;
+            flex: 1;
+            padding: 0 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .rep-text {
+            font-size: 14px;
+            font-family: 'Times New Roman', Times, serif !important;
+            margin: 0;
+            color: #000;
+            text-align: center;
+        }
+
+        .doh-text {
+            font-size: 16px;
+            font-weight: bold;
+            font-family: 'Times New Roman', Times, serif !important;
+            margin: 2px 0;
+            color: #000;
+            letter-spacing: 0.5px;
+            text-align: center;
+        }
+
+        .brhmc-text {
+            font-size: 18px;
+            font-weight: bold;
+            font-family: Arial, Helvetica, sans-serif !important;
+            color: #008000;
+            margin: 0;
+            line-height: 1.2;
+            text-transform: uppercase;
+            text-align: center;
+        }
+
+        .header-logo-right { display: flex; align-items: center; justify-content: flex-end; }
+
+        .bin-card-main-title {
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+            letter-spacing: 3px;
+            color: var(--primary);
+            margin: 15px 0 20px 0;
+            text-decoration: underline;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px 20px;
+            margin-bottom: 20px;
+            border: 2px solid var(--text-dark);
+            padding: 16px;
+            font-size: 11px;
+            border-radius: var(--radius-sm);
+            background: #fafafa;
+        }
+
+        .info-field { display: flex; align-items: flex-end; min-height: 22px; }
+        .info-field label { font-weight: bold; margin-right: 8px; white-space: nowrap; color: #000; }
+        .info-field span { border-bottom: 1px solid #000; flex: 1; padding-left: 6px; font-weight: bold; }
+
+        .stock-gauge-box {
+            background: #f8fafc;
+            border: 1px solid var(--border-color);
+            padding: 10px 14px;
+            border-radius: var(--radius-md);
+            margin-bottom: 16px;
+        }
+
+        .gauge-header {
+            display: flex;
+            justify-content: space-between;
+            font-size: 11px;
+            font-weight: bold;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+        }
+
+        .gauge-bar-bg { height: 12px; background: #e2e8f0; border-radius: 6px; overflow: hidden; }
+
+        .gauge-bar-fill {
+            height: 100%;
+            width: 0%;
+            background: var(--success);
+            transition: width 0.3s ease, background-color 0.3s ease;
+        }
+
+        @keyframes blink-warning {
+            0% { opacity: 1; }
+            50% { opacity: 0.25; }
+            100% { opacity: 1; }
+        }
+
+        .blink-alert { animation: blink-warning infinite ease-in-out; }
+
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; table-layout: fixed; }
+        table, th, td { border: 1.5px solid #000; }
+        th, td { padding: 8px 6px; text-align: center; font-size: 11px; word-wrap: break-word; }
+        th { background-color: #f1f5f9; font-weight: bold; text-transform: uppercase; color: var(--text-dark); }
+        .balance-col { font-weight: bold; background-color: #f8fafc; }
+        .no-records { text-align: center; color: var(--text-muted); font-style: italic; padding: 40px 0; }
+
+        .btn-delete-row {
+            background-color: var(--danger);
+            color: white;
+            border: none;
+            padding: 3px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 10px;
+            font-weight: bold;
+        }
+
+        .actions-bar { 
+            margin-top: auto; 
+            padding-top: 24px; 
+            display: flex; 
+            justify-content: flex-end; 
+            gap: 12px; 
+        }
+
+        .btn-report {
+            padding: 12px 20px;
+            background: var(--accent);
+            color: white;
+            border: none;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: bold;
+            transition: all 0.2s;
+        }
+        .btn-report:hover { background: #0284c7; }
+
+        .btn-all-endusers {
+            padding: 12px 20px;
+            background: #10b981;
+            color: white;
+            border: none;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: bold;
+            transition: all 0.2s;
+        }
+        .btn-all-endusers:hover { background: #059669; }
+
+        .btn-print {
+            padding: 12px 24px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: bold;
+            transition: all 0.2s;
+        }
+        .btn-print:hover { background: #1e293b; }
+
+        .operator-meta {
+            font-size: 9.5px;
+            color: #475569;
+            display: block;
+            margin-top: 3px;
+            font-style: italic;
+            border-top: 1px dashed #cbd5e1;
+            padding-top: 2px;
+        }
+
+        /* Modal Dialogs */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(15, 23, 42, 0.7);
+            backdrop-filter: blur(4px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal-card {
+            background: #fff;
+            padding: 32px;
+            border-radius: var(--radius-lg);
+            width: 560px;
+            max-width: 90%;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            border: 1px solid var(--border-color);
+        }
+
+        .modal-card h2 { margin-top: 0; color: var(--primary); font-size: 18px; text-align: center; font-weight: bold; }
+        .modal-card .form-group { margin-bottom: 12px; }
+        .modal-card label { display: block; font-size: 11px; font-weight: bold; margin-bottom: 4px; text-transform: uppercase; color: var(--text-muted); }
+
+        .btn-submit {
+            width: 100%;
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 11px;
+            border-radius: var(--radius-md);
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 6px;
+        }
+
+        .report-modal-card {
+            width: 900px;
+            max-width: 95%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .summary-stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin: 16px 0;
+        }
+
+        .summary-stat-box {
+            background: #f8fafc;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 10px;
+            text-align: center;
+        }
+
+        .summary-stat-box h5 { margin: 0; font-size: 10px; color: var(--text-muted); text-transform: uppercase; }
+        .summary-stat-box p { margin: 4px 0 0 0; font-size: 16px; font-weight: bold; color: var(--primary); }
+
+        .users-table-container {
+            margin-top: 20px;
+            border-top: 2px solid var(--border-color);
+            padding-top: 16px;
+            max-height: 220px;
+            overflow-y: auto;
+        }
+
+        .users-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+        .users-table th, .users-table td { border: 1px solid var(--border-color); padding: 8px; text-align: left; }
+        .users-table th { background: #f8fafc; font-weight: bold; color: var(--text-muted); text-transform: uppercase; font-size: 10px; }
+
+        .btn-delete-user {
+            background: #fee2e2;
+            color: var(--danger);
+            border: 1px solid #fca5a5;
+            padding: 4px 8px;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 11px;
+        }
+        .btn-delete-user:hover { background: var(--danger); color: white; }
+
+        .section-header-title {
+            font-size: 12px;
+            font-weight: bold;
+            color: var(--primary);
+            text-transform: uppercase;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 4px;
+            margin-top: 20px;
+            margin-bottom: 10px;
+        }
+
+        .enduser-card-block {
+            background: #f8fafc;
+            border: 1.5px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 16px;
+            margin-bottom: 20px;
+        }
+
+        .enduser-card-title {
+            margin: 0 0 10px 0;
+            font-size: 14px;
+            font-weight: bold;
+            color: var(--primary);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 6px;
+        }
+
+        @media print {
+            body { background: white !important; padding: 0 !important; margin: 0 !important; }
+            .app-header, .metrics-grid, .sidebar, .input-panel, .actions-bar, .action-column, .stock-gauge-box, #loginModal, #userModal { display: none !important; }
+            .preview-panel { box-shadow: none !important; border: none !important; padding: 0 !important; width: 100% !important; min-height: auto !important; }
+
+            body.printing-report .app-header,
+            body.printing-report .metrics-grid,
+            body.printing-report .app-layout,
+            body.printing-report #loginModal,
+            body.printing-report #userModal,
+            body.printing-report #allEndUsersModal,
+            body.printing-report .preview-panel {
+                display: none !important;
+            }
+
+            body.printing-report #reportModal,
+            body.printing-report #allEndUsersModal {
+                display: block !important;
+                position: absolute !important;
+                left: 0 !important;
+                top: 0 !important;
+                width: 100% !important;
+                height: auto !important;
+                background: white !important;
+                backdrop-filter: none !important;
+                z-index: 99999 !important;
+            }
+
+            body.printing-report .report-modal-card {
+                width: 100% !important;
+                max-width: 100% !important;
+                box-shadow: none !important;
+                border: none !important;
+                padding: 10px !important;
+                margin: 0 !important;
+                max-height: none !important;
+                overflow: visible !important;
+            }
+
+            body.printing-report .no-print-btn {
+                display: none !important;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<!-- Login Modal -->
+<div id="loginModal" class="modal-overlay">
+    <div class="modal-card" style="width: 400px;">
+        <h2>System Sign In</h2>
+        <p style="font-size: 12px; color: var(--text-muted); text-align: center; margin-bottom: 20px;">Central Supply Unit Bin Card Portal</p>
+        <form onsubmit="handleLogin(event)">
+            <div class="form-group">
+                <label>Username</label>
+                <input type="text" id="loginUsername" required placeholder="Enter username">
+            </div>
+            <div class="form-group">
+                <label>Password</label>
+                <input type="password" id="loginPassword" required placeholder="Enter password">
+            </div>
+            <div class="form-group">
+                <label>Duty Shift</label>
+                <select id="loginShift" required>
+                    <option value="Morning (7 AM - 3 PM)">Morning Shift (7:00 AM – 3:00 PM)</option>
+                    <option value="Evening (3 PM - 11 PM)">Evening Shift (3:00 PM – 11:00 PM)</option>
+                    <option value="Night (11 PM - 7 AM)">Night Shift (11:00 PM – 7:00 AM)</option>
+                </select>
+            </div>
+            <button type="submit" class="btn-submit">Sign In to Dashboard</button>
+        </form>
+    </div>
+</div>
+
+<!-- Admin User Management Modal -->
+<div id="userModal" class="modal-overlay" style="display: none;">
+    <div class="modal-card">
+        <h2>Manage Staff Profiles</h2>
+        <form onsubmit="handleAddUser(event)">
+            <div class="form-row-2col">
+                <div class="form-group">
+                    <label>Full Name</label>
+                    <input type="text" id="newFullName" required placeholder="e.g. Juan Dela Cruz">
+                </div>
+                <div class="form-group">
+                    <label>Username</label>
+                    <input type="text" id="newUsername" required placeholder="e.g. juand">
+                </div>
+            </div>
+            <div class="form-row-2col" style="margin-top: 10px;">
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" id="newPassword" required placeholder="Create password">
+                </div>
+                <div class="form-group">
+                    <label>Role</label>
+                    <select id="newRole">
+                        <option value="STAFF">Staff Encoder</option>
+                        <option value="ADMIN">Administrator</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-group" style="margin-top: 10px;">
+                <label>Allowed Transaction Scope</label>
+                <select id="newPermission">
+                    <option value="ALL">Full Access (All Actions Allowed)</option>
+                    <option value="ISSUE">Issue / Deduction Only</option>
+                    <option value="DELIVERY">Delivery / Receipt Only</option>
+                    <option value="COUNT">Physical Count / Set Balance Only</option>
+                </select>
+            </div>
+            <div style="display: flex; gap: 8px; margin-top: 14px;">
+                <button type="submit" class="btn-submit" style="background: var(--accent);">+ Add Profile</button>
+                <button type="button" class="btn-submit" style="background: var(--text-muted);" onclick="closeUserModal()">Close</button>
+            </div>
+        </form>
+
+        <div class="users-table-container">
+            <label style="margin-bottom: 8px; font-weight: bold; font-size: 11px; text-transform: uppercase; color: var(--text-muted);">Registered Profiles</label>
+            <table class="users-table">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Username</th>
+                        <th>Scope</th>
+                        <th style="text-align: center;">Action</th>
+                    </tr>
+                </thead>
+                <tbody id="usersTableBody"></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Single Bin Card Summary Report Modal -->
+<div id="reportModal" class="modal-overlay" style="display: none;">
+    <div class="modal-card report-modal-card">
+        <h2>Bin Card Consumption & Movement Report</h2>
+        <p style="font-size: 12px; color: var(--text-muted); text-align: center; margin-bottom: 12px;" id="reportSubtitle">Item Summary Report</p>
+
+        <!-- Filter Bar -->
+        <div class="no-print-btn" style="background: #f8fafc; padding: 12px; border-radius: var(--radius-md); border: 1px solid var(--border-color); margin-bottom: 16px;">
+            <div class="form-group" style="margin: 0;">
+                <label for="reportEndUserFilter">Filter Report by End-User / Ward:</label>
+                <select id="reportEndUserFilter" onchange="generateReportData()">
+                    <option value="ALL">-- All End-Users / Wards --</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="summary-stats-grid">
+            <div class="summary-stat-box">
+                <h5 id="lblStat1">Total Deliveries</h5>
+                <p id="repTotalDeliveries">0</p>
+            </div>
+            <div class="summary-stat-box">
+                <h5 id="lblStat2">Total Issues</h5>
+                <p id="repTotalIssues">0</p>
+            </div>
+            <div class="summary-stat-box">
+                <h5 id="lblStat3">Issue Entries</h5>
+                <p id="repTotalCounts">0</p>
+            </div>
+            <div class="summary-stat-box">
+                <h5 id="lblStat4">Current Stock</h5>
+                <p id="repCurrentStock">0</p>
+            </div>
+        </div>
+
+        <!-- End-User Summary Breakdown Section -->
+        <div id="endUserSummarySection" style="margin-top: 15px;">
+            <div class="section-header-title">End-User Consumption Summary Breakdown</div>
+            <table style="width:100%; border-collapse: collapse;" id="endUserSummaryTable">
+                <thead>
+                    <tr>
+                        <th style="text-align: left;">End-User / Ward Name</th>
+                        <th>Total Quantity Issued</th>
+                        <th>Total Transaction Count</th>
+                        <th>Share of Total Issues</th>
+                    </tr>
+                </thead>
+                <tbody id="endUserSummaryTableBody"></tbody>
+            </table>
+        </div>
+
+        <!-- Transaction Log Section -->
+        <div style="margin-top: 20px;">
+            <div class="section-header-title">Filtered Transaction History</div>
+            <table style="width:100%; border-collapse: collapse;" id="reportTable">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Reference</th>
+                        <th>Type</th>
+                        <th>Quantity</th>
+                        <th>End-User / Source</th>
+                        <th>Encoder</th>
+                    </tr>
+                </thead>
+                <tbody id="reportTableBody"></tbody>
+            </table>
+        </div>
+
+        <div style="display: flex; gap: 10px; margin-top: 20px;" class="no-print-btn">
+            <button type="button" class="btn-submit" style="background: var(--primary);" onclick="printReportModal()">Print Consumption Report</button>
+            <button type="button" class="btn-submit" style="background: var(--text-muted);" onclick="closeReportModal()">Close Report</button>
+        </div>
+    </div>
+</div>
+
+<!-- All End-Users Separate Consumption Report Modal (Across ALL Bin Cards) -->
+<div id="allEndUsersModal" class="modal-overlay" style="display: none;">
+    <div class="modal-card report-modal-card">
+        <h2>Separated End-User Consumption Reports</h2>
+        <p style="font-size: 12px; color: var(--text-muted); text-align: center; margin-bottom: 12px;">
+            Detailed consumption report generated for every end-user across all active and future bin cards.
+        </p>
+
+        <div id="allEndUsersContainer">
+            <!-- Individual End-User tables populated here dynamically -->
+        </div>
+
+        <div style="display: flex; gap: 10px; margin-top: 20px;" class="no-print-btn">
+            <button type="button" class="btn-submit" style="background: var(--primary);" onclick="printAllEndUsersReport()">Print All End-User Reports</button>
+            <button type="button" class="btn-submit" style="background: var(--text-muted);" onclick="closeAllEndUsersModal()">Close Report</button>
+        </div>
+    </div>
+</div>
+
+<!-- Navigation Header -->
+<header class="app-header">
+    <div class="brand-container">
+        <!-- LOCAL BRHMC LOGO -->
+        <img src="./images/brhmc-logo.png" alt="BRHMC Logo" class="brand-icon-logo">
+        <div>
+            <h1 class="brand-title">Central Supply Unit</h1>
+            <div class="brand-subtitle">Bin Card Control Center</div>
+        </div>
+    </div>
+    <div class="user-status-bar">
+        <span>Operator: <strong id="currentUserDisplay">-</strong></span>
+        <span id="currentRoleDisplay" class="role-badge">-</span>
+        <span id="currentPermDisplay" class="perm-badge">-</span>
+        <span id="currentShiftDisplay" class="shift-badge">-</span>
+        <button class="btn-logout" onclick="logout()">Sign Out</button>
+    </div>
+</header>
+
+<!-- Metrics Grid -->
+<div class="metrics-grid">
+    <div class="metric-card">
+        <div class="metric-icon">📦</div>
+        <div class="metric-data">
+            <h4>Total Items Managed</h4>
+            <p id="metricTotalCards">0</p>
+        </div>
+    </div>
+    <div class="metric-card">
+        <div class="metric-icon">🕒</div>
+        <div class="metric-data">
+            <h4>Active Duty Shift</h4>
+            <p id="metricActiveShift" style="font-size: 14px; margin-top: 6px;">-</p>
+        </div>
+    </div>
+    <div class="metric-card">
+        <div class="metric-icon">📊</div>
+        <div class="metric-data">
+            <h4>Logged Entries</h4>
+            <p id="metricTotalTx">0</p>
+        </div>
+    </div>
+</div>
+
+<div class="app-layout">
+    <!-- Catalog Sidebar -->
+    <div class="panel-card sidebar">
+        <h2 class="panel-title">Catalog Directory</h2>
+        <div class="search-box">
+            <input type="text" id="searchInput" placeholder="Search catalog..." oninput="filterItems()">
+        </div>
+        <button class="btn-action-secondary" onclick="sortBinCardsAlphabetically()">Sort Alphabetically (A-Z)</button>
+        <button class="btn-action-secondary" id="btnManageUsers" onclick="openUserModal()" style="display: none;">Manage User Profiles</button>
+        
+        <ul class="item-list" id="itemList"></ul>
+        <button class="btn-new-item" id="btnNewCard" onclick="addNewBinCard()">+ Create New Bin Card</button>
+    </div>
+
+    <!-- Transaction Form Panel -->
+    <div class="panel-card input-panel">
+        <div class="form-section">
+            <h2 class="panel-title">1. Item Metadata</h2>
+            <div class="form-group">
+                <label for="inputItemName">Item Name</label>
+                <input type="text" id="inputItemName" placeholder="e.g. Paracetamol 500mg Tab" oninput="saveCurrentHeaderDetails()">
+            </div>
+            <div class="form-row-2col">
+                <div class="form-group">
+                    <label for="inputStockNo">Stock No.</label>
+                    <input type="text" id="inputStockNo" placeholder="e.g. SN-2026-001" oninput="saveCurrentHeaderDetails()">
+                </div>
+                <div class="form-group">
+                    <label for="inputConsignor">Consignor</label>
+                    <input type="text" id="inputConsignor" placeholder="e.g. DOH / Supplier" oninput="saveCurrentHeaderDetails()">
+                </div>
+            </div>
+
+            <!-- Batch & Expiry Date Metadata -->
+            <div class="form-row-2col">
+                <div class="form-group">
+                    <label for="inputBatchNo">Batch / Lot No.</label>
+                    <input type="text" id="inputBatchNo" placeholder="e.g. B-90823" oninput="saveCurrentHeaderDetails()">
+                </div>
+                <div class="form-group">
+                    <label for="inputExpiryDate">Expiry Date</label>
+                    <input type="date" id="inputExpiryDate" onchange="saveCurrentHeaderDetails()">
+                </div>
+            </div>
+
+            <!-- Stock Control Thresholds -->
+            <div class="form-row-3col">
+                <div class="form-group">
+                    <label for="inputMaxLevel" title="Max Level (100%)">Max Level</label>
+                    <input type="number" id="inputMaxLevel" placeholder="1000" oninput="saveCurrentHeaderDetails()">
+                </div>
+                <div class="form-group">
+                    <label for="inputReorderPoint" title="Re-Order Point">Reorder Pt</label>
+                    <input type="number" id="inputReorderPoint" placeholder="300" oninput="saveCurrentHeaderDetails()">
+                </div>
+                <div class="form-group">
+                    <label for="inputDangerPoint" title="Danger Point (0%)">Danger Pt</label>
+                    <input type="number" id="inputDangerPoint" placeholder="50" oninput="saveCurrentHeaderDetails()">
+                </div>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <h2 class="panel-title">2. Transaction Entry</h2>
+            <div class="form-group">
+                <label for="txType">Transaction Type</label>
+                <select id="txType" onchange="toggleFormMode()"></select>
+            </div>
+
+            <div class="form-row-2col">
+                <div class="form-group">
+                    <label for="txDate">Date</label>
+                    <input type="date" id="txDate">
+                </div>
+                <div class="form-group">
+                    <label for="txRef">Reference</label>
+                    <input type="text" id="txRef" placeholder="RIS / PO No.">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="txQty" id="qtyLabel">Issued Quantity</label>
+                <input type="number" id="txQty" placeholder="0" min="0">
+            </div>
+
+            <div class="form-group">
+                <label for="txEndUser" id="endUserLabel">End-User</label>
+                <input type="text" id="txEndUser" placeholder="Ward / Department (e.g. 1A, 1B, 3B)">
+            </div>
+
+            <div class="form-group" id="daysGroup">
+                <label for="txDays">No. of Days to Consume</label>
+                <input type="number" id="txDays" placeholder="0" min="0">
+            </div>
+
+            <button class="btn-add" id="btnAddTx" onclick="addTransaction()">+ Post Transaction Entry</button>
+        </div>
+
+        <button class="btn-delete-card" id="btnDeleteCard" onclick="deleteCurrentBinCard()">Delete Active Bin Card</button>
+    </div>
+
+    <!-- Sheet Document Preview -->
+    <div class="panel-card preview-panel">
+        <div class="sheet-container">
+            
+            <div class="official-header">
+                <div class="header-left-group">
+                    <!-- LOCAL DOH LOGO -->
+                    <div class="logo-col-doh">
+                        <img src="./images/doh-logo.png" alt="DOH Logo" class="header-logo-img">
+                    </div>
+                    <!-- LOCAL BRHMC LOGO -->
+                    <div class="logo-col-brhmc">
+                        <img src="./images/brhmc-logo.png" alt="BRHMC Logo" class="header-logo-img">
+                        <div class="iso-subtext-brhmc">
+                            ISO 9001:2015<br>
+                            TÜV Rheinland 01 100 1432593
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="header-text-center">
+                    <p class="rep-text">Republic of the Philippines</p>
+                    <p class="doh-text">DEPARTMENT OF HEALTH</p>
+                    <p class="brhmc-text">BICOL REGIONAL HOSPITAL AND MEDICAL CENTER</p>
+                </div>
+
+                <!-- LOCAL BAGONG PILIPINAS LOGO -->
+                <div class="header-logo-right">
+                    <img src="./images/bagong-pilipinas-logo.png" alt="Bagong Pilipinas Logo" class="header-logo-img">
+                </div>
+            </div>
+
+            <div class="bin-card-main-title">BIN CARD</div>
+
+            <!-- Dynamic Live Stock Status Bar -->
+            <div class="stock-gauge-box">
+                <div class="gauge-header">
+                    <span>Stock Capacity Status: <strong id="gaugePercentage">0%</strong></span>
+                    <span id="gaugeStatusText">Calculating...</span>
+                </div>
+                <div class="gauge-bar-bg">
+                    <div id="gaugeBarFill" class="gauge-bar-fill"></div>
+                </div>
+            </div>
+
+            <div class="info-grid">
+                <div class="info-field">
+                    <label>ITEM NAME:</label>
+                    <span id="displayItemName">-</span>
+                </div>
+                <div class="info-field">
+                    <label>STOCK NO.:</label>
+                    <span id="displayStockNo">-</span>
+                </div>
+                <div class="info-field">
+                    <label>BATCH / LOT NO.:</label>
+                    <span id="displayBatchNo">-</span>
+                </div>
+                <div class="info-field">
+                    <label>EXPIRATION DATE:</label>
+                    <span id="displayExpiryDate">-</span>
+                </div>
+                <div class="info-field">
+                    <label>CONSIGNOR:</label>
+                    <span id="displayConsignor">-</span>
+                </div>
+                <div class="info-field">
+                    <label>RE-ORDER POINT (%):</label>
+                    <span id="displayReorderPoint">-</span>
+                </div>
+            </div>
+
+            <table id="binCardTable">
+                <thead>
+                    <tr>
+                        <th style="width: 11%;">Date</th>
+                        <th style="width: 12%;">Reference</th>
+                        <th style="width: 11%;">Receipt Qty</th>
+                        <th style="width: 11%;">Issue Qty</th>
+                        <th style="width: 26%;">End-User / Remarks & Operator</th>
+                        <th style="width: 11%;">Balance Qty</th>
+                        <th style="width: 11%;">Days to Consume</th>
+                        <th class="action-column" style="width: 7%;">Action</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                    <tr id="emptyRow">
+                        <td colspan="8" class="no-records">No transaction entries added yet.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="actions-bar">
+            <button class="btn-all-endusers" onclick="openAllEndUsersReportModal()">End-User Consumption Report (All Bin Cards)</button>
+            <button class="btn-report" onclick="openReportModal()">Single Card Report</button>
+            <button class="btn-print" onclick="window.print()">Print Active Bin Card (8.5" x 13")</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    let users = JSON.parse(localStorage.getItem('csu_users')) || {
+        'admin': { password: 'admin123', name: 'System Administrator', role: 'ADMIN', permission: 'ALL' },
+        'nurse1': { password: 'nurse123', name: 'M. Santos, RN', role: 'STAFF', permission: 'ISSUE' }
+    };
+
+    let currentUser = null;
+    let binCards = [];
+    let activeCardId = null;
+
+    window.onload = function() {
+        document.getElementById('txDate').valueAsDate = new Date();
+        checkSession();
+    };
+
+    function checkSession() {
+        const session = JSON.parse(sessionStorage.getItem('activeUser'));
+        if (session) {
+            currentUser = session;
+            document.getElementById('loginModal').style.display = 'none';
+            document.getElementById('currentUserDisplay').textContent = currentUser.name;
+            document.getElementById('currentRoleDisplay').textContent = currentUser.role;
+            
+            const permText = {
+                'ALL': 'FULL ACCESS',
+                'ISSUE': 'DEDUCTION ONLY',
+                'DELIVERY': 'DELIVERY ONLY',
+                'COUNT': 'PHYSICAL COUNT ONLY'
+            }[currentUser.permission || 'ALL'];
+
+            document.getElementById('currentPermDisplay').textContent = permText;
+            document.getElementById('currentShiftDisplay').textContent = currentUser.shift;
+            document.getElementById('metricActiveShift').textContent = currentUser.shift;
+            
+            configureTxDropdownOptions();
+            applyRolePermissions();
+            loadFromStorage();
+            
+            if (binCards.length === 0) {
+                addNewBinCard("New Medical Supply");
+            } else {
+                selectBinCard(binCards[0].id);
+            }
+            updateMetrics();
+        } else {
+            document.getElementById('loginModal').style.display = 'flex';
+        }
+    }
+
+    function configureTxDropdownOptions() {
+        const txSelect = document.getElementById('txType');
+        txSelect.innerHTML = '';
+
+        const perm = currentUser ? (currentUser.permission || 'ALL') : 'ALL';
+
+        const optIssue = document.createElement('option');
+        optIssue.value = 'ISSUE';
+        optIssue.textContent = 'Issued Supply (Deduct)';
+
+        const optDelivery = document.createElement('option');
+        optDelivery.value = 'DELIVERY';
+        optDelivery.textContent = 'Delivery / Receipt (Add)';
+
+        const optCount = document.createElement('option');
+        optCount.value = 'COUNT';
+        optCount.textContent = 'Actual Physical Count (Set Balance)';
+
+        if (perm === 'ALL') {
+            txSelect.appendChild(optIssue);
+            txSelect.appendChild(optDelivery);
+            txSelect.appendChild(optCount);
+        } else if (perm === 'ISSUE') {
+            txSelect.appendChild(optIssue);
+        } else if (perm === 'DELIVERY') {
+            txSelect.appendChild(optDelivery);
+        } else if (perm === 'COUNT') {
+            txSelect.appendChild(optCount);
+        }
+
+        toggleFormMode();
+    }
+
+    function handleLogin(e) {
+        e.preventDefault();
+        const usernameInput = document.getElementById('loginUsername').value.trim();
+        const passwordInput = document.getElementById('loginPassword').value.trim();
+        const shiftInput = document.getElementById('loginShift').value;
+
+        const user = users[usernameInput];
+        if (user && user.password === passwordInput) {
+            const userSession = { 
+                username: usernameInput, 
+                name: user.name, 
+                role: user.role,
+                permission: user.permission || 'ALL',
+                shift: shiftInput
+            };
+            sessionStorage.setItem('activeUser', JSON.stringify(userSession));
+            checkSession();
+        } else {
+            alert('Invalid username or password!');
+        }
+    }
+
+    function openUserModal() { 
+        renderUsersList();
+        document.getElementById('userModal').style.display = 'flex'; 
+    }
+    
+    function closeUserModal() { 
+        document.getElementById('userModal').style.display = 'none'; 
+    }
+
+    /* Separate Reports for Every End-User Across ALL Active & Future Bin Cards */
+    function openAllEndUsersReportModal() {
+        const container = document.getElementById('allEndUsersContainer');
+        container.innerHTML = '';
+
+        // endUserMap = { "1A": { "Paracetamol": { totalQty: 50, txCount: 3, binCards: Set("BIN-101", "BIN-102") } } }
+        const endUserMap = {};
+
+        binCards.forEach(card => {
+            const itemTitle = card.itemName || 'Untitled Item';
+            const stockNo = card.stockNo ? ` (${card.stockNo})` : '';
+            const fullItemLabel = `${itemTitle}${stockNo}`;
+
+            if (card.transactions) {
+                card.transactions.forEach(tx => {
+                    if (tx.type === 'ISSUE' && tx.endUser && tx.endUser.trim() !== '' && tx.endUser !== '-') {
+                        const eu = tx.endUser.trim();
+
+                        if (!endUserMap[eu]) {
+                            endUserMap[eu] = {};
+                        }
+
+                        if (!endUserMap[eu][fullItemLabel]) {
+                            endUserMap[eu][fullItemLabel] = {
+                                totalQty: 0,
+                                txCount: 0,
+                                binCards: new Set()
+                            };
+                        }
+
+                        endUserMap[eu][fullItemLabel].totalQty += tx.issuedQty;
+                        endUserMap[eu][fullItemLabel].txCount += 1;
+                        endUserMap[eu][fullItemLabel].binCards.add(fullItemLabel);
+                    }
+                });
+            }
+        });
+
+        const sortedEndUsers = Object.keys(endUserMap).sort();
+
+        if (sortedEndUsers.length === 0) {
+            container.innerHTML = `<p style="text-align: center; color: var(--text-muted); padding: 40px;">No issuance transaction entries recorded for any End-User across all active bin cards.</p>`;
+        } else {
+            sortedEndUsers.forEach(eu => {
+                const itemsData = endUserMap[eu];
+                let userTotalQty = 0;
+                let userTotalTx = 0;
+
+                const cardBlock = document.createElement('div');
+                cardBlock.className = 'enduser-card-block';
+
+                let rowsHtml = '';
+                Object.keys(itemsData).sort().forEach(itemLabel => {
+                    const data = itemsData[itemLabel];
+                    userTotalQty += data.totalQty;
+                    userTotalTx += data.txCount;
+
+                    rowsHtml += `
+                        <tr>
+                            <td style="text-align: left;"><strong>${itemLabel}</strong></td>
+                            <td><strong>${data.totalQty}</strong></td>
+                            <td>${data.txCount}</td>
+                        </tr>
+                    `;
+                });
+
+                cardBlock.innerHTML = `
+                    <div class="enduser-card-title">
+                        <span>End-User: <u>${eu}</u></span>
+                        <span style="font-size: 11px; color: var(--text-muted);">Total Consumed: <strong>${userTotalQty} units</strong> across ${userTotalTx} transaction(s)</span>
+                    </div>
+                    <table style="width:100%; border-collapse: collapse;">
+                        <thead>
+                            <tr>
+                                <th style="text-align: left; width: 50%;">Item Issued</th>
+                                <th style="width: 25%;">Total Quantity Issued</th>
+                                <th style="width: 25%;">Issuance Count</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${rowsHtml}
+                        </tbody>
+                    </table>
+                `;
+
+                container.appendChild(cardBlock);
+            });
+        }
+
+        document.getElementById('allEndUsersModal').style.display = 'flex';
+    }
+
+    function closeAllEndUsersModal() {
+        document.getElementById('allEndUsersModal').style.display = 'none';
+    }
+
+    function printAllEndUsersReport() {
+        document.body.classList.add('printing-report');
+        window.print();
+        document.body.classList.remove('printing-report');
+    }
+
+    function openReportModal() {
+        const card = binCards.find(c => c.id === activeCardId);
+        if (!card) return;
+
+        document.getElementById('reportSubtitle').textContent = `Movement & Inventory Consumption Report for: ${card.itemName || 'Untitled Item'} (Stock No: ${card.stockNo || 'N/A'})`;
+
+        // Populate End-User Filter Dropdown
+        const selectFilter = document.getElementById('reportEndUserFilter');
+        selectFilter.innerHTML = '<option value="ALL">-- All End-Users / Wards --</option>';
+
+        const endUsersSet = new Set();
+        if (card.transactions) {
+            card.transactions.forEach(tx => {
+                if (tx.endUser && tx.endUser.trim() !== '' && tx.endUser !== '-') {
+                    endUsersSet.add(tx.endUser.trim());
+                }
+            });
+        }
+
+        Array.from(endUsersSet).sort().forEach(user => {
+            const opt = document.createElement('option');
+            opt.value = user;
+            opt.textContent = user;
+            selectFilter.appendChild(opt);
+        });
+
+        generateReportData();
+        document.getElementById('reportModal').style.display = 'flex';
+    }
+
+    function generateReportData() {
+        const card = binCards.find(c => c.id === activeCardId);
+        if (!card) return;
+
+        const selectedEndUser = document.getElementById('reportEndUserFilter').value;
+        const isFiltered = selectedEndUser !== 'ALL';
+
+        let totalDelivered = 0;
+        let totalIssued = 0;
+        let totalIssueCount = 0;
+        let overallIssuedQty = 0;
+
+        const tbody = document.getElementById('reportTableBody');
+        tbody.innerHTML = '';
+
+        // Map for end-user aggregation
+        const endUserAggMap = {};
+
+        card.transactions.forEach(tx => {
+            if (tx.type === 'ISSUE') {
+                overallIssuedQty += tx.issuedQty;
+                const eu = tx.endUser || 'Unspecified';
+                if (!endUserAggMap[eu]) {
+                    endUserAggMap[eu] = { totalQty: 0, count: 0 };
+                }
+                endUserAggMap[eu].totalQty += tx.issuedQty;
+                endUserAggMap[eu].count += 1;
+            }
+        });
+
+        // Populate End-User Aggregation Table
+        const summaryTableBody = document.getElementById('endUserSummaryTableBody');
+        summaryTableBody.innerHTML = '';
+
+        const aggregatedUsers = Object.keys(endUserAggMap);
+        if (aggregatedUsers.length === 0) {
+            summaryTableBody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding: 10px;">No end-user issue records logged.</td></tr>`;
+        } else {
+            aggregatedUsers.sort().forEach(eu => {
+                const data = endUserAggMap[eu];
+                const sharePct = overallIssuedQty > 0 ? ((data.totalQty / overallIssuedQty) * 100).toFixed(1) : '0.0';
+                const row = document.createElement('tr');
+                if (isFiltered && eu === selectedEndUser) {
+                    row.style.background = '#e0f2fe';
+                }
+                row.innerHTML = `
+                    <td style="text-align: left;"><strong>${eu}</strong></td>
+                    <td><strong>${data.totalQty}</strong></td>
+                    <td>${data.count}</td>
+                    <td>${sharePct}%</td>
+                `;
+                summaryTableBody.appendChild(row);
+            });
+        }
+
+        // Filter transaction list
+        const filteredTx = card.transactions.filter(tx => {
+            if (!isFiltered) return true;
+            return tx.endUser === selectedEndUser;
+        });
+
+        if (filteredTx.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding: 20px;">No matching transaction entries found for the selected End-User.</td></tr>`;
+        } else {
+            filteredTx.forEach(tx => {
+                let qtyText = 0;
+                let txTypeTitle = '';
+
+                if (tx.type === 'DELIVERY') {
+                    totalDelivered += tx.receiptQty;
+                    qtyText = `+${tx.receiptQty}`;
+                    txTypeTitle = 'Delivery';
+                } else if (tx.type === 'ISSUE') {
+                    totalIssued += tx.issuedQty;
+                    totalIssueCount++;
+                    qtyText = `-${tx.issuedQty}`;
+                    txTypeTitle = 'Issue';
+                } else if (tx.type === 'COUNT') {
+                    qtyText = `Set: ${tx.actualCount}`;
+                    txTypeTitle = 'Physical Count';
+                }
+
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${tx.date}</td>
+                    <td>${tx.ref}</td>
+                    <td><strong>${txTypeTitle}</strong></td>
+                    <td>${qtyText}</td>
+                    <td><strong>${tx.endUser}</strong></td>
+                    <td>${tx.operatorName || '-'} (${tx.operatorShift || 'N/A'})</td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        if (isFiltered) {
+            document.getElementById('lblStat1').textContent = 'Selected End-User';
+            document.getElementById('repTotalDeliveries').textContent = selectedEndUser;
+
+            document.getElementById('lblStat2').textContent = 'Total Quantity Consumed';
+            document.getElementById('repTotalIssues').textContent = totalIssued;
+
+            document.getElementById('lblStat3').textContent = 'Issue Transactions';
+            document.getElementById('repTotalCounts').textContent = totalIssueCount;
+
+            document.getElementById('lblStat4').textContent = 'Avg Qty Per Issue';
+            const avg = totalIssueCount > 0 ? (totalIssued / totalIssueCount).toFixed(1) : 0;
+            document.getElementById('repCurrentStock').textContent = avg;
+        } else {
+            document.getElementById('lblStat1').textContent = 'Total Deliveries';
+            document.getElementById('repTotalDeliveries').textContent = totalDelivered;
+
+            document.getElementById('lblStat2').textContent = 'Total Issues';
+            document.getElementById('repTotalIssues').textContent = totalIssued;
+
+            document.getElementById('lblStat3').textContent = 'Issue Entries';
+            document.getElementById('repTotalCounts').textContent = totalIssueCount;
+
+            document.getElementById('lblStat4').textContent = 'Current Stock';
+            document.getElementById('repCurrentStock').textContent = calculateCurrentBalance(card);
+        }
+    }
+
+    function closeReportModal() {
+        document.getElementById('reportModal').style.display = 'none';
+    }
+
+    function printReportModal() {
+        document.body.classList.add('printing-report');
+        window.print();
+        document.body.classList.remove('printing-report');
+    }
+
+    function renderUsersList() {
+        const tbody = document.getElementById('usersTableBody');
+        tbody.innerHTML = '';
+
+        Object.keys(users).forEach(username => {
+            const u = users[username];
+            const row = document.createElement('tr');
+
+            const permText = {
+                'ALL': 'FULL ACCESS',
+                'ISSUE': 'DEDUCTION ONLY',
+                'DELIVERY': 'DELIVERY ONLY',
+                'COUNT': 'PHYSICAL COUNT ONLY'
+            }[u.permission || 'ALL'];
+
+            row.innerHTML = `
+                <td><strong>${u.name}</strong></td>
+                <td><code>${username}</code></td>
+                <td><span class="perm-badge" style="font-size: 8px;">${permText}</span></td>
+                <td style="text-align: center;">
+                    ${
+                        username === 'admin' 
+                        ? '<span style="font-size: 10px; color: var(--text-muted);">Protected</span>' 
+                        : (currentUser && currentUser.username === username)
+                            ? '<span style="font-size: 10px; color: var(--text-muted);">Active Session</span>'
+                            : `<button class="btn-delete-user" onclick="deleteUserProfile('${username}')">Delete</button>`
+                    }
+                </td>
+            `;
+            tbody.appendChild(row);
+        });
+    }
+
+    function handleAddUser(e) {
+        e.preventDefault();
+        const name = document.getElementById('newFullName').value.trim();
+        const username = document.getElementById('newUsername').value.trim();
+        const password = document.getElementById('newPassword').value.trim();
+        const role = document.getElementById('newRole').value;
+        const permission = document.getElementById('newPermission').value;
+
+        if (users[username]) {
+            alert("Username already exists!");
+            return;
+        }
+
+        users[username] = { password, name, role, permission };
+        localStorage.setItem('csu_users', JSON.stringify(users));
+        alert(`User profile created for ${name}!`);
+        
+        document.getElementById('newFullName').value = '';
+        document.getElementById('newUsername').value = '';
+        document.getElementById('newPassword').value = '';
+        
+        renderUsersList();
+    }
+
+    function deleteUserProfile(username) {
+        if (username === 'admin') {
+            alert("The default Admin profile cannot be deleted.");
+            return;
+        }
+
+        if (currentUser && currentUser.username === username) {
+            alert("You cannot delete the profile you are currently signed in with.");
+            return;
+        }
+
+        if (confirm(`Are you sure you want to permanently delete user profile "${users[username].name}" (${username})?`)) {
+            delete users[username];
+            localStorage.setItem('csu_users', JSON.stringify(users));
+            renderUsersList();
+        }
+    }
+
+    function logout() {
+        sessionStorage.removeItem('activeUser');
+        location.reload();
+    }
+
+    function applyRolePermissions() {
+        if (!currentUser) return;
+        const isAdmin = currentUser.role === 'ADMIN';
+        document.getElementById('btnDeleteCard').style.display = isAdmin ? 'block' : 'none';
+        document.getElementById('btnManageUsers').style.display = isAdmin ? 'block' : 'none';
+    }
+
+    function updateMetrics() {
+        document.getElementById('metricTotalCards').textContent = binCards.length;
+        let totalTx = 0;
+        binCards.forEach(c => totalTx += c.transactions.length);
+        document.getElementById('metricTotalTx').textContent = totalTx;
+    }
+
+    function generateUUID() {
+        return (typeof crypto !== 'undefined' && crypto.randomUUID) 
+            ? crypto.randomUUID() 
+            : 'id-' + Math.random().toString(36).substr(2, 9) + '-' + Date.now();
+    }
+
+    function saveToStorage() {
+        localStorage.setItem('csu_bincards', JSON.stringify(binCards));
+        updateMetrics();
+    }
+
+    function loadFromStorage() {
+        const stored = localStorage.getItem('csu_bincards');
+        if (stored) {
+            try { binCards = JSON.parse(stored); } catch(e) { binCards = []; }
+        }
+    }
+
+    function sortBinCardsAlphabetically() {
+        binCards.sort((a, b) => {
+            const nameA = (a.itemName || '').trim().toLowerCase();
+            const nameB = (b.itemName || '').trim().toLowerCase();
+            return nameA.localeCompare(nameB);
+        });
+        saveToStorage();
+        renderSidebar();
+    }
+
+    function addNewBinCard(defaultTitle = "") {
+        const newCard = {
+            id: generateUUID(),
+            itemName: defaultTitle || "New Supply Item",
+            stockNo: "",
+            batchNo: "",
+            expiryDate: "",
+            reorderPoint: 300,
+            maxLevel: 1000,
+            dangerPoint: 50,
+            consignor: "",
+            transactions: []
+        };
+        binCards.push(newCard);
+        saveToStorage();
+        renderSidebar();
+        selectBinCard(newCard.id);
+    }
+
+    function selectBinCard(id) {
+        activeCardId = id;
+        renderSidebar();
+        const card = binCards.find(c => c.id === id);
+        if (!card) return;
+
+        document.getElementById('inputItemName').value = card.itemName || '';
+        document.getElementById('inputStockNo').value = card.stockNo || '';
+        document.getElementById('inputBatchNo').value = card.batchNo || '';
+        document.getElementById('inputExpiryDate').value = card.expiryDate || '';
+        document.getElementById('inputReorderPoint').value = card.reorderPoint !== undefined ? card.reorderPoint : '';
+        document.getElementById('inputMaxLevel').value = card.maxLevel !== undefined ? card.maxLevel : '';
+        document.getElementById('inputDangerPoint').value = card.dangerPoint !== undefined ? card.dangerPoint : '';
+        document.getElementById('inputConsignor').value = card.consignor || '';
+
+        updateHeaderPreview();
+        renderTable();
+    }
+
+    function saveCurrentHeaderDetails() {
+        const card = binCards.find(c => c.id === activeCardId);
+        if (!card) return;
+
+        card.itemName = document.getElementById('inputItemName').value;
+        card.stockNo = document.getElementById('inputStockNo').value;
+        card.batchNo = document.getElementById('inputBatchNo').value;
+        card.expiryDate = document.getElementById('inputExpiryDate').value;
+        card.reorderPoint = parseFloat(document.getElementById('inputReorderPoint').value) || 0;
+        card.maxLevel = parseFloat(document.getElementById('inputMaxLevel').value) || 0;
+        card.dangerPoint = parseFloat(document.getElementById('inputDangerPoint').value) || 0;
+        card.consignor = document.getElementById('inputConsignor').value;
+
+        updateHeaderPreview();
+        renderSidebar();
+        saveToStorage();
+        renderTable();
+    }
+
+    function calculateCurrentBalance(card) {
+        if (!card || !card.transactions) return 0;
+        let balance = 0;
+        card.transactions.forEach((item) => {
+            if (item.type === 'COUNT') {
+                balance = item.actualCount;
+            } else {
+                balance = balance + item.receiptQty - item.issuedQty;
+            }
+        });
+        return balance;
+    }
+
+    function updateHeaderPreview() {
+        const card = binCards.find(c => c.id === activeCardId);
+        if (!card) return;
+
+        document.getElementById('displayItemName').textContent = card.itemName || '-';
+        document.getElementById('displayStockNo').textContent = card.stockNo || '-';
+        document.getElementById('displayBatchNo').textContent = card.batchNo || '-';
+        document.getElementById('displayExpiryDate').textContent = card.expiryDate || '-';
+        document.getElementById('displayConsignor').textContent = card.consignor || '-';
+        
+        const currentBalance = calculateCurrentBalance(card);
+        const max = card.maxLevel || 1000;
+        const danger = card.dangerPoint || 0;
+        const reorderQty = card.reorderPoint || 300;
+
+        let pct = 0;
+        if (max > danger) {
+            pct = ((currentBalance - danger) / (max - danger)) * 100;
+        }
+
+        const clampedPct = Math.max(0, Math.min(100, pct)).toFixed(1);
+        
+        document.getElementById('displayReorderPoint').textContent = `${card.reorderPoint || 0} (${clampedPct}%)`;
+
+        const fill = document.getElementById('gaugeBarFill');
+        const pctText = document.getElementById('gaugePercentage');
+        const statusText = document.getElementById('gaugeStatusText');
+
+        pctText.textContent = `${clampedPct}% (${currentBalance} / ${max} Units)`;
+        fill.style.width = `${clampedPct}%`;
+
+        if (currentBalance <= danger) {
+            fill.style.backgroundColor = 'var(--danger)';
+            statusText.textContent = '🚨 DANGER ZONE (CRITICAL LOW)';
+            statusText.style.color = 'var(--danger)';
+            
+            fill.classList.add('blink-alert');
+            statusText.classList.add('blink-alert');
+            fill.style.animationDuration = '0.6s'; 
+            statusText.style.animationDuration = '0.6s'; 
+        } else if (currentBalance <= reorderQty) {
+            fill.style.backgroundColor = 'var(--warning)';
+            statusText.textContent = '⚠️ REORDER POINT REACHED';
+            statusText.style.color = 'var(--warning)';
+            
+            fill.classList.add('blink-alert');
+            statusText.classList.add('blink-alert');
+            fill.style.animationDuration = '1.2s'; 
+            statusText.style.animationDuration = '1.2s'; 
+        } else {
+            fill.style.backgroundColor = 'var(--success)';
+            statusText.textContent = '✅ HEALTHY STOCK LEVEL';
+            statusText.style.color = 'var(--success)';
+            
+            fill.classList.remove('blink-alert');
+            statusText.classList.remove('blink-alert');
+        }
+    }
+
+    function toggleFormMode() {
+        const type = document.getElementById('txType').value;
+        const qtyLabel = document.getElementById('qtyLabel');
+        const endUserLabel = document.getElementById('endUserLabel');
+        const daysGroup = document.getElementById('daysGroup');
+
+        if (!type) return;
+
+        if (type === 'ISSUE') {
+            qtyLabel.innerText = "Issued Quantity";
+            endUserLabel.innerText = "End-User";
+            daysGroup.style.display = "flex";
+            document.getElementById('txEndUser').placeholder = "Ward / Department (e.g. 1A, 1B, 3B)";
+        } else if (type === 'DELIVERY') {
+            qtyLabel.innerText = "Delivery / Receipt Quantity";
+            endUserLabel.innerText = "Supplier / Source";
+            daysGroup.style.display = "none";
+            document.getElementById('txEndUser').placeholder = "e.g. Supplier Name";
+        } else if (type === 'COUNT') {
+            qtyLabel.innerText = "Actual Physical Count";
+            endUserLabel.innerText = "Remarks / Recounted By";
+            daysGroup.style.display = "none";
+            document.getElementById('txEndUser').placeholder = "e.g. Physical Inventory";
+        }
+    }
+
+    function addTransaction() {
+        const card = binCards.find(c => c.id === activeCardId);
+        if (!card) return;
+
+        const type = document.getElementById('txType').value;
+        const date = document.getElementById('txDate').value;
+        const ref = document.getElementById('txRef').value || '-';
+        const qty = parseFloat(document.getElementById('txQty').value) || 0;
+        const endUser = document.getElementById('txEndUser').value || (type === 'COUNT' ? 'Physical Inventory' : '-');
+        const daysToConsume = (type === 'ISSUE') ? (document.getElementById('txDays').value || '-') : '-';
+
+        if (qty === 0 && type !== 'COUNT') {
+            alert("Please enter a valid Quantity.");
+            return;
+        }
+
+        card.transactions.push({
+            id: generateUUID(),
+            type,
+            date,
+            ref,
+            receiptQty: (type === 'DELIVERY') ? qty : 0,
+            issuedQty: (type === 'ISSUE') ? qty : 0,
+            actualCount: type === 'COUNT' ? qty : null,
+            endUser,
+            daysToConsume,
+            operatorName: currentUser ? currentUser.name : 'Unknown User',
+            operatorShift: currentUser ? currentUser.shift : 'N/A'
+        });
+
+        card.transactions.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+        saveToStorage();
+        renderTable();
+        updateHeaderPreview();
+
+        document.getElementById('txRef').value = '';
+        document.getElementById('txQty').value = '';
+        document.getElementById('txEndUser').value = '';
+        document.getElementById('txDays').value = '';
+    }
+
+    function deleteTransaction(txId) {
+        if (currentUser.role !== 'ADMIN') {
+            alert("Permission Denied: Only Admins can delete transaction logs.");
+            return;
+        }
+
+        const card = binCards.find(c => c.id === activeCardId);
+        if (!card) return;
+
+        if (confirm("Delete this transaction entry? Balances will be recalculated.")) {
+            card.transactions = card.transactions.filter(t => t.id !== txId);
+            saveToStorage();
+            renderTable();
+            updateHeaderPreview();
+        }
+    }
+
+    function deleteCurrentBinCard() {
+        if (currentUser.role !== 'ADMIN') {
+            alert("Permission Denied: Only Admins can delete Bin Cards.");
+            return;
+        }
+
+        if (binCards.length <= 1) {
+            alert("You must keep at least one Bin Card in your system.");
+            return;
+        }
+
+        if (confirm("Are you sure you want to completely delete this Bin Card and all its entries?")) {
+            binCards = binCards.filter(c => c.id !== activeCardId);
+            saveToStorage();
+            selectBinCard(binCards[0].id);
+        }
+    }
+
+    function renderSidebar() {
+        const itemList = document.getElementById('itemList');
+        const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+        itemList.innerHTML = '';
+
+        binCards.forEach(card => {
+            const name = card.itemName || 'Untitled Item';
+            const stock = card.stockNo || 'No Stock No.';
+
+            if (name.toLowerCase().includes(searchTerm) || stock.toLowerCase().includes(searchTerm)) {
+                const li = document.createElement('li');
+                if (card.id === activeCardId) li.className = 'active';
+                li.onclick = () => selectBinCard(card.id);
+
+                const nameSpan = document.createElement('span');
+                nameSpan.className = 'item-name-text';
+                nameSpan.textContent = name;
+
+                const stockSpan = document.createElement('span');
+                stockSpan.className = 'stock-tag';
+                stockSpan.textContent = stock;
+
+                li.appendChild(nameSpan);
+                li.appendChild(stockSpan);
+                itemList.appendChild(li);
+            }
+        });
+    }
+
+    function filterItems() { renderSidebar(); }
+
+    function renderTable() {
+        const tbody = document.getElementById('tableBody');
+        tbody.innerHTML = '';
+
+        const card = binCards.find(c => c.id === activeCardId);
+        if (!card || card.transactions.length === 0) {
+            tbody.innerHTML = `
+                <tr id="emptyRow">
+                    <td colspan="8" class="no-records">No transaction entries added yet.</td>
+                </tr>
+            `;
+            updateHeaderPreview();
+            return;
+        }
+
+        let runningBalance = 0;
+
+        card.transactions.forEach((item) => {
+            if (item.type === 'COUNT') {
+                runningBalance = item.actualCount;
+            } else {
+                runningBalance = runningBalance + item.receiptQty - item.issuedQty;
+            }
+
+            const row = document.createElement('tr');
+            const createTd = (text, className = '') => {
+                const td = document.createElement('td');
+                td.textContent = text;
+                if (className) td.className = className;
+                return td;
+            };
+
+            row.appendChild(createTd(item.date));
+            row.appendChild(createTd(item.ref));
+            row.appendChild(createTd(item.receiptQty > 0 ? item.receiptQty : ''));
+            row.appendChild(createTd(item.issuedQty > 0 ? item.issuedQty : ''));
+
+            const endUserTd = document.createElement('td');
+            if (item.type === 'COUNT') {
+                const strong = document.createElement('strong');
+                strong.textContent = '[ACTUAL COUNT] ';
+                endUserTd.appendChild(strong);
+                endUserTd.appendChild(document.createTextNode(item.endUser));
+            } else {
+                endUserTd.appendChild(document.createTextNode(item.endUser));
+            }
+            
+            if (item.operatorName) {
+                const opTag = document.createElement('span');
+                opTag.className = 'operator-meta';
+                opTag.textContent = `Encoder: ${item.operatorName} (${item.operatorShift || 'N/A'})`;
+                endUserTd.appendChild(opTag);
+            }
+            
+            row.appendChild(endUserTd);
+            row.appendChild(createTd(runningBalance, 'balance-col'));
+            row.appendChild(createTd(item.daysToConsume));
+
+            const actionTd = document.createElement('td');
+            actionTd.className = 'action-column';
+
+            if (currentUser && currentUser.role === 'ADMIN') {
+                const btnDelete = document.createElement('button');
+                btnDelete.className = 'btn-delete-row';
+                btnDelete.textContent = 'Delete';
+                btnDelete.onclick = () => deleteTransaction(item.id);
+                actionTd.appendChild(btnDelete);
+            } else {
+                actionTd.textContent = '-';
+            }
+
+            row.appendChild(actionTd);
+            tbody.appendChild(row);
+        });
+
+        updateHeaderPreview();
+    }
+</script>
+
+</body>
+</html>
