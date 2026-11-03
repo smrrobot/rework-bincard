@@ -390,6 +390,36 @@
         }
 
         .form-section { display: flex; flex-direction: column; gap: 10px; }
+        .metadata-section {
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 10px;
+        }
+
+        .metadata-section > summary {
+            cursor: pointer;
+            list-style: none;
+        }
+
+        .metadata-section > summary::-webkit-details-marker {
+            display: none;
+        }
+
+        .metadata-section > summary::after {
+            content: "+";
+            margin-left: auto;
+            color: var(--primary);
+            font-size: 18px;
+            line-height: 1;
+        }
+
+        .metadata-section[open] > summary::after {
+            content: "−";
+        }
+
+        .metadata-fields {
+            padding-top: 10px;
+        }
+
         .form-group { display: flex; flex-direction: column; gap: 4px; }
 
         .form-group label { 
@@ -1818,11 +1848,12 @@
 
     <!-- Transaction Form Panel -->
     <div class="panel-card input-panel">
-        <div class="form-section">
-            <h2 class="panel-title">
+        <details class="metadata-section">
+            <summary class="panel-title">
                 1. Item Metadata
                 <span id="metadataRestrictionBadge" class="readonly-tag" style="display: none;">Admin Only</span>
-            </h2>
+            </summary>
+            <div class="form-section metadata-fields">
             <div class="form-group">
                 <label for="inputItemName">Item Name</label>
                 <input type="text" id="inputItemName" placeholder="e.g. Paracetamol 500mg Tab" required oninput="saveCurrentHeaderDetails()">
@@ -1865,7 +1896,8 @@
                     <input type="number" id="inputDangerPoint" placeholder="50" oninput="saveCurrentHeaderDetails()">
                 </div>
             </div>
-        </div>
+            </div>
+        </details>
 
         <div class="form-section">
             <h2 class="panel-title">2. Transaction Entry</h2>
@@ -3537,7 +3569,7 @@
                     opPrefix = 'Counted By';
                 }
 
-                opTag.textContent = `${opPrefix}: ${item.operatorName} (${item.operatorShift || 'N/A'})`;
+                opTag.textContent = `${opPrefix}: ${item.operatorName} ${item.operatorShift || 'N/A'}`;
                 endUserTd.appendChild(opTag);
             }
             
