@@ -61,7 +61,7 @@
             margin: 0 auto 16px auto;
             background: var(--primary);
             color: #ffffff;
-            padding: 14px 24px;
+            /* padding: 0px 0px; */
             border-radius: var(--radius-lg);
             box-shadow: var(--shadow-md);
             display: flex;
@@ -106,7 +106,7 @@
             align-items: center;
             gap: 10px;
             font-size: 12px;
-            background: rgba(255, 255, 255, 0.1);
+           
             padding: 6px 14px;
             border-radius: 20px;
         }
@@ -640,6 +640,11 @@
         .preview-panel th, .preview-panel td { padding: 4px 2px; text-align: center; font-size: 9.5px; word-wrap: break-word; color: #000; }
         .preview-panel th { background-color: #f1f5f9; font-weight: bold; text-transform: uppercase; font-size: 8.5px; }
         #binCardTable tr:nth-child(1) td:nth-child(6) { font-size: 100%; }
+
+        #binCardTable tbody tr.transaction-shift-morning > td { background-color: #ecfdf3; }
+        #binCardTable tbody tr.transaction-shift-evening > td { background-color: #eff6ff; }
+        #binCardTable tbody tr.transaction-shift-night > td { background-color: #fee2e2; }
+        /* #binCardTable tbody tr.transaction-shift-night > td:first-child { border-left: 4px solid #dc2626; } */
         
         .balance-col { font-weight: bold; }
         .no-records { text-align: center; color: #64748b; font-style: italic; padding: 15px 0; }
@@ -728,7 +733,7 @@
         .btn-report:hover, .btn-all-endusers:hover, .btn-print:hover { opacity: 0.9; }
 
         .operator-meta {
-            font-size: 8px;
+            font-size: small;
             color: #475569;
             display: block;
             margin-top: 1px;
@@ -1123,7 +1128,7 @@
 
             .app-header {
                 background: linear-gradient(115deg, #173777, #1e40af);
-                padding: 16px 22px;
+                padding: 0px 22px;
                 border: 1px solid rgba(255, 255, 255, 0.12);
             }
 
@@ -1376,9 +1381,6 @@
                     font-size: 18px;
                 }
 
-                .user-status-bar {
-                    gap: 8px;
-                }
 
                 .metric-card {
                     padding: 12px;
@@ -1768,6 +1770,14 @@
     <p class="notification-body" id="notifBannerText">Status updated.</p>
 </div>
 
+<div id="draftRemovedModal" class="modal-overlay" style="display: none;" role="alertdialog" aria-modal="true" aria-labelledby="draftRemovedTitle" aria-describedby="draftRemovedMessage">
+    <div class="modal-card" style="width: 420px; text-align: center;">
+        <h2 id="draftRemovedTitle">Draft Removed</h2>
+        <p id="draftRemovedMessage" style="color: var(--text-muted);">Drafts are removed if no transaction is recorded.</p>
+        <button type="button" class="btn-submit" onclick="closeDraftRemovedModal()">OK</button>
+    </div>
+</div>
+
 <!-- Navigation Header -->
 <header class="app-header">
     <div class="brand-container">
@@ -1815,7 +1825,7 @@
             </h2>
             <div class="form-group">
                 <label for="inputItemName">Item Name</label>
-                <input type="text" id="inputItemName" placeholder="e.g. Paracetamol 500mg Tab" oninput="saveCurrentHeaderDetails()">
+                <input type="text" id="inputItemName" placeholder="e.g. Paracetamol 500mg Tab" required oninput="saveCurrentHeaderDetails()">
             </div>
             <div class="form-row-2col">
                 <div class="form-group">
@@ -2031,7 +2041,10 @@
     };
 
     function getSystemShift() {
-        const hour = new Date().getHours();
+        return getShiftForHour(new Date().getHours());
+    }
+
+    function getShiftForHour(hour) {
         if (hour >= 7 && hour < 15) return 'Morning (7 AM - 3 PM)';
         if (hour >= 15 && hour < 23) return 'Evening (3 PM - 11 PM)';
         return 'Night (11 PM - 7 AM)';
@@ -2072,10 +2085,10 @@
             
             configureTxDropdownOptions();
             applyRolePermissions();
-            loadFromStorage();
+            const removedDraftCount = loadFromStorage();
             
             if (binCards.length === 0) {
-                addNewBinCard("New Medical Supply");
+                addNewBinCard();
             } else {
                 selectBinCard(binCards[0].id);
             }
@@ -2089,6 +2102,7 @@
                 }
             }
             toggleFormMode();
+            if (removedDraftCount > 0) showDraftRemovedModal(removedDraftCount);
         } else {
             document.getElementById('loginModal').style.display = 'flex';
         }
@@ -2879,10 +2893,13 @@
         const stockNoField = document.getElementById('inputStockNo');
         stockNoField.removeAttribute('readonly');
         stockNoField.removeAttribute('disabled');
+        const itemNameField = document.getElementById('inputItemName');
+        itemNameField.removeAttribute('readonly');
+        itemNameField.removeAttribute('disabled');
 
         // Restrict Item Metadata editing inputs for non-Admin Staff/Encoders
         const metadataFields = [
-            'inputItemName', 'inputConsignor', 
+            'inputConsignor',
             'inputBatchNo', 'inputExpiryDate', 'inputMaxLevel', 
             'inputReorderPoint', 'inputDangerPoint'
         ];
@@ -2920,6 +2937,39 @@
         updateMetrics();
     }
 
+    function hasRecordedTransaction(card) {
+        return Array.isArray(card.transactions) && card.transactions.length > 0;
+    }
+
+    function removeEmptyDraftCard(cardId) {
+        const card = binCards.find(item => item.id === cardId);
+        if (!card || !card.isDraft) return false;
+
+        if (hasRecordedTransaction(card)) {
+            card.isDraft = false;
+            card.awaitingFirstTransaction = false;
+            saveToStorage();
+            return false;
+        }
+
+        binCards = binCards.filter(item => item.id !== cardId);
+        saveToStorage();
+        return true;
+    }
+
+    function showDraftRemovedModal(count = 1) {
+        const message = count === 1
+            ? 'The draft was removed because it has no recorded transactions. Names and other details do not save it.'
+            : `${count} drafts were removed because they have no recorded transactions. Names and other details do not save them.`;
+        document.getElementById('draftRemovedMessage').textContent = message;
+        document.getElementById('draftRemovedModal').style.display = 'flex';
+        document.getElementById('draftRemovedModal').querySelector('button').focus();
+    }
+
+    function closeDraftRemovedModal() {
+        document.getElementById('draftRemovedModal').style.display = 'none';
+    }
+
     function loadFromStorage() {
         const storedCards = localStorage.getItem('csu_bincards');
         if (storedCards) {
@@ -2930,6 +2980,18 @@
         if (storedHistory) {
             try { dataHistory = JSON.parse(storedHistory); } catch(e) { dataHistory = { deletedTransactions: [], deletedCards: [] }; }
         }
+
+        const removedDraftCount = binCards.filter(card => card.isDraft && !hasRecordedTransaction(card)).length;
+        const hadDrafts = binCards.some(card => card.isDraft);
+        binCards = binCards.filter(card => !card.isDraft || hasRecordedTransaction(card));
+        binCards.forEach(card => {
+            if (card.isDraft) {
+                card.isDraft = false;
+                card.awaitingFirstTransaction = false;
+            }
+        });
+        if (hadDrafts) saveToStorage();
+        return removedDraftCount;
     }
 
     function sortBinCardsAlphabetically() {
@@ -2942,10 +3004,10 @@
         renderSidebar();
     }
 
-    function addNewBinCard(defaultTitle = "") {
+    function addNewBinCard() {
         const newCard = {
             id: generateUUID(),
-            itemName: defaultTitle || "New Supply Item",
+            itemName: "",
             stockNo: "",
             batchNo: "",
             expiryDate: "",
@@ -2953,7 +3015,9 @@
             maxLevel: 1000,
             dangerPoint: 50,
             consignor: "",
-            transactions: []
+            transactions: [],
+            isDraft: true,
+            awaitingFirstTransaction: true
         };
         binCards.push(newCard);
         saveToStorage();
@@ -2962,6 +3026,10 @@
     }
 
     function selectBinCard(id) {
+        let removedDraft = false;
+        if (activeCardId && activeCardId !== id) {
+            removedDraft = removeEmptyDraftCard(activeCardId);
+        }
         activeCardId = id;
         dismissedNotificationCardId = null; 
         renderSidebar();
@@ -2979,15 +3047,23 @@
 
         updateHeaderPreview();
         renderTable();
+        if (removedDraft) showDraftRemovedModal();
     }
 
     function saveCurrentHeaderDetails() {
-        if (!currentUser || currentUser.role !== 'ADMIN') return;
+        if (!currentUser) return;
 
         const card = binCards.find(c => c.id === activeCardId);
         if (!card) return;
 
         card.itemName = document.getElementById('inputItemName').value;
+        if (currentUser.role !== 'ADMIN') {
+            updateHeaderPreview();
+            renderSidebar();
+            saveToStorage();
+            return;
+        }
+
         card.stockNo = document.getElementById('inputStockNo').value;
         card.batchNo = document.getElementById('inputBatchNo').value;
         card.expiryDate = document.getElementById('inputExpiryDate').value;
@@ -3203,6 +3279,14 @@
         const card = binCards.find(c => c.id === activeCardId);
         if (!card) return;
 
+        const itemNameInput = document.getElementById('inputItemName');
+        const itemName = itemNameInput.value.trim();
+        if (!itemName) {
+            alert('Item Name is required before recording a transaction.');
+            itemNameInput.focus();
+            return;
+        }
+
         const type = document.getElementById('txType').value;
         const date = document.getElementById('txDate').value;
         const ref = document.getElementById('txRef').value || '-';
@@ -3215,6 +3299,8 @@
             return;
         }
 
+        const isFirstTransaction = card.awaitingFirstTransaction === true;
+        card.itemName = itemName;
         dismissedNotificationCardId = null;
 
         card.transactions.push({
@@ -3232,6 +3318,8 @@
             operatorShift: currentUser ? currentUser.shift : 'N/A',
             operatorPermission: currentUser ? currentUser.permission : 'ALL'
         });
+        card.isDraft = false;
+        card.awaitingFirstTransaction = false;
 
         card.transactions.sort((a, b) => new Date(a.date) - new Date(b.date));
 
@@ -3239,7 +3327,14 @@
         renderTable();
         updateHeaderPreview();
 
-        if (type === 'DELIVERY') {
+        if (isFirstTransaction) {
+            showPopupBanner(
+                '✅ Bin Card Created',
+                `The new bin card for <strong>${card.itemName}</strong> is now active.`,
+                'success',
+                5000
+            );
+        } else if (type === 'DELIVERY') {
             const newBal = calculateCurrentBalance(card);
             showPopupBanner(
                 '📦 Refill Delivery Posted', 
@@ -3394,6 +3489,17 @@
             visibleCount++;
 
             const row = document.createElement('tr');
+            console.log(item);
+            const shift = (item.operatorShift || '').trim().toLowerCase();
+  
+            if (shift.includes('morning')) {
+                row.classList.add('transaction-shift-morning');
+            } else if (shift.includes('evening') || shift.includes('3 pm')) {
+                row.classList.add('transaction-shift-evening');
+            } else if (shift.includes('night') || shift.includes('11 pm')) {
+                row.classList.add('transaction-shift-night');
+            }
+
             const createTd = (text, className = '') => {
                 const td = document.createElement('td');
                 td.textContent = text;
