@@ -422,6 +422,97 @@
 
         .form-group { display: flex; flex-direction: column; gap: 4px; }
 
+        .enduser-radio-control {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .enduser-radio-option {
+            display: inline-flex !important;
+            align-items: center;
+            gap: 1px;
+            min-height: 20px;
+            padding: 1px 0px 1px 8px;
+            border: 1px solid var(--enduser-border, var(--border-color));
+            border-radius: 24px;
+            background: var(--enduser-bg, #f8f8f8);
+            color: var(--enduser-text, var(--text-dark)) !important;
+        }
+
+        .enduser-radio-option.selected {
+            border-color: var(--enduser-border, var(--primary-light));
+            background: var(--enduser-border, var(--primary));
+            color: var(--enduser-text, var(--primary)) !important;
+            box-shadow: 0 0 10px var(--enduser-border, var(--primary-light));
+        }
+
+        .form-group .enduser-radio-option label {
+            display: inline-flex;
+            align-items: center;
+            gap: 2px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: none;
+            white-space: normal;
+        }
+
+        .enduser-radio-option input {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            clip-path: inset(50%);
+            border: 0;
+        }
+
+        .enduser-radio-option:focus-within {
+            outline: 2px solid var(--primary-light);
+            outline-offset: 2px;
+        }
+
+        .btn-remove-enduser {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 24px;
+            height: 24px;
+            padding: 0;
+            border: 0;
+            border-radius: 50%;
+            background: transparent;
+            color: var(--text-muted);
+            font-size: 16px;
+            line-height: 1;
+            cursor: pointer;
+        }
+
+        .btn-remove-enduser:hover {
+            background: #fee2e2;
+            color: #b91c1c;
+        }
+
+        .btn-add-enduser {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 36px;
+            height: 36px;
+            border: 1px dashed var(--primary-light);
+            border-radius: 50%;
+            background: #eff6ff;
+            color: var(--primary);
+            font-size: 22px;
+            line-height: 1;
+            cursor: pointer;
+        }
+
         .form-group label { 
             font-size: 10px; 
             font-weight: bold; 
@@ -1923,7 +2014,14 @@
             </div>
 
             <div class="form-group">
-                <label for="txEndUser" id="endUserLabel">End-User</label>
+                <label id="endUserLabel">End-User</label>
+                <div id="endUserRadioControl" class="enduser-radio-control" role="radiogroup" aria-labelledby="endUserLabel">
+                    <div id="txEndUserOptions" style="display: contents;"></div>
+                    <button type="button" class="btn-add-enduser" onclick="addEndUserOption()" aria-label="Add end-user option" title="Add end-user">+</button>
+                </div>
+            </div>
+            <div class="form-group" id="endUserTextControl" style="display: none;">
+                <label for="txEndUser" id="endUserTextLabel">End-User</label>
                 <input type="text" id="txEndUser" placeholder="Ward / Department (e.g. 1A, 1B, 3B)">
             </div>
 
@@ -2058,6 +2156,10 @@
     };
 
     let currentUser = null;
+    let currentTransactionType = null;
+    let customEndUserOptions = [];
+    let removedEndUserOptions = [];
+    let endUserOptionColors = new Map();
     let lastSystemShift = null;
     let binCards = [];
     let dataHistory = { deletedTransactions: [], deletedCards: [] };
@@ -3013,6 +3115,52 @@
             try { dataHistory = JSON.parse(storedHistory); } catch(e) { dataHistory = { deletedTransactions: [], deletedCards: [] }; }
         }
 
+        const storedEndUserOptions = localStorage.getItem('csu_end_user_options');
+        if (storedEndUserOptions) {
+            try {
+                const parsedOptions = JSON.parse(storedEndUserOptions);
+                if (!Array.isArray(parsedOptions) || parsedOptions.some(option => typeof option !== 'string')) {
+                    throw new Error('Stored end-user options must be an array of strings.');
+                }
+                customEndUserOptions = parsedOptions;
+            } catch (error) {
+                console.error('Unable to load saved end-user options.', error);
+                customEndUserOptions = [];
+            }
+        }
+
+        const storedRemovedEndUserOptions = localStorage.getItem('csu_removed_end_user_options');
+        if (storedRemovedEndUserOptions) {
+            try {
+                const parsedOptions = JSON.parse(storedRemovedEndUserOptions);
+                if (!Array.isArray(parsedOptions) || parsedOptions.some(option => typeof option !== 'string')) {
+                    throw new Error('Stored removed end-user options must be an array of strings.');
+                }
+                removedEndUserOptions = parsedOptions;
+            } catch (error) {
+                console.error('Unable to load removed end-user options.', error);
+                removedEndUserOptions = [];
+            }
+        }
+
+        const storedEndUserColors = localStorage.getItem('csu_end_user_colors');
+        if (storedEndUserColors) {
+            try {
+                const parsedColors = JSON.parse(storedEndUserColors);
+                const colorCount = getEndUserColorPalette().length;
+                if (!parsedColors || typeof parsedColors !== 'object' || Array.isArray(parsedColors) ||
+                    Object.values(parsedColors).some(index =>
+                        !Number.isInteger(index) || index < 0 || index >= colorCount
+                    )) {
+                    throw new Error('Stored end-user colors must map names to valid palette indexes.');
+                }
+                endUserOptionColors = new Map(Object.entries(parsedColors));
+            } catch (error) {
+                console.error('Unable to load saved end-user option colors.', error);
+                endUserOptionColors = new Map();
+            }
+        }
+
         const removedDraftCount = binCards.filter(card => card.isDraft && !hasRecordedTransaction(card)).length;
         const hadDrafts = binCards.some(card => card.isDraft);
         binCards = binCards.filter(card => !card.isDraft || hasRecordedTransaction(card));
@@ -3079,6 +3227,7 @@
 
         updateHeaderPreview();
         renderTable();
+        if (document.getElementById('txType').value === 'ISSUE') renderEndUserOptions();
         if (removedDraft) showDraftRemovedModal();
     }
 
@@ -3264,25 +3413,36 @@
         const type = typeElem ? typeElem.value : 'ISSUE';
         const qtyLabel = document.getElementById('qtyLabel');
         const endUserLabel = document.getElementById('endUserLabel');
+        const endUserTextLabel = document.getElementById('endUserTextLabel');
         const daysGroup = document.getElementById('daysGroup');
         const txEndUser = document.getElementById('txEndUser');
+        const endUserRadioControl = document.getElementById('endUserRadioControl');
+        const endUserTextControl = document.getElementById('endUserTextControl');
 
         if (!type) return;
+        if (currentTransactionType === 'ISSUE' && type !== 'ISSUE') {
+            txEndUser.value = '';
+        }
+        currentTransactionType = type;
 
         const isAdmin = currentUser && currentUser.role === 'ADMIN';
 
         if (type === 'ISSUE') {
             qtyLabel.innerText = "Issued Quantity";
             endUserLabel.innerText = "End-User";
+            endUserRadioControl.style.display = 'flex';
+            endUserTextControl.style.display = 'none';
             daysGroup.style.display = "flex";
-            txEndUser.placeholder = "Ward / Department (e.g. 1A, 1B, 3B)";
             if (txEndUser.value === 'DELIVERY') {
                 txEndUser.value = "";
             }
             txEndUser.removeAttribute('readonly');
+            renderEndUserOptions();
         } else if (type === 'DELIVERY') {
             qtyLabel.innerText = "Delivery / Receipt Quantity";
-            endUserLabel.innerText = "Supplier / Source";
+            endUserTextLabel.innerText = "Supplier / Source";
+            endUserRadioControl.style.display = 'none';
+            endUserTextControl.style.display = 'flex';
             daysGroup.style.display = "none";
             txEndUser.placeholder = "DELIVERY / Supplier Name";
 
@@ -3297,7 +3457,9 @@
             }
         } else if (type === 'COUNT') {
             qtyLabel.innerText = "Actual Physical Count";
-            endUserLabel.innerText = "Remarks / Recounted By";
+            endUserTextLabel.innerText = "Remarks / Recounted By";
+            endUserRadioControl.style.display = 'none';
+            endUserTextControl.style.display = 'flex';
             daysGroup.style.display = "none";
             txEndUser.placeholder = "e.g. Physical Inventory";
             if (txEndUser.value === 'DELIVERY') {
@@ -3305,6 +3467,146 @@
             }
             txEndUser.removeAttribute('readonly');
         }
+    }
+
+    function getEndUserOptions() {
+        const options = new Map();
+        [...customEndUserOptions, ...binCards.flatMap(card =>
+            (card.transactions || [])
+                .filter(transaction => transaction.type === 'ISSUE')
+                .map(transaction => transaction.endUser || '')
+        )].forEach(option => {
+            const value = option.trim();
+            const isRemoved = removedEndUserOptions.some(removed =>
+                removed.toLocaleLowerCase() === value.toLocaleLowerCase()
+            );
+            if (value && value !== '-' && value.toUpperCase() !== 'DELIVERY' && !isRemoved) {
+                options.set(value.toLocaleLowerCase(), value);
+            }
+        });
+        return Array.from(options.values()).sort((a, b) => a.localeCompare(b));
+    }
+
+    function getEndUserColorPalette() {
+        return [
+            { background: '#fef3c7', selected: '#fde68a', border: '#f59e0b', text: '#78350f' },
+            { background: '#dcfce7', selected: '#bbf7d0', border: '#4ade80', text: '#14532d' },
+            { background: '#dbeafe', selected: '#bfdbfe', border: '#60a5fa', text: '#1e3a8a' },
+            { background: '#fce7f3', selected: '#fbcfe8', border: '#f472b6', text: '#831843' },
+            { background: '#ede9fe', selected: '#ddd6fe', border: '#a78bfa', text: '#4c1d95' },
+            { background: '#ffedd5', selected: '#fed7aa', border: '#fb923c', text: '#7c2d12' },
+            { background: '#cffafe', selected: '#a5f3fc', border: '#22d3ee', text: '#164e63' },
+            { background: '#ffe4e6', selected: '#fecdd3', border: '#fb7185', text: '#881337' }
+        ];
+    }
+
+    function getEndUserColorIndex(option) {
+        const key = option.toLocaleLowerCase();
+        if (endUserOptionColors.has(key)) return endUserOptionColors.get(key);
+
+        const palette = getEndUserColorPalette();
+        const assignedColors = new Set(endUserOptionColors.values());
+        const availableColors = palette.map((_, index) => index).filter(index => !assignedColors.has(index));
+        const colorChoices = availableColors.length ? availableColors : palette.map((_, index) => index);
+        const colorIndex = colorChoices[Math.floor(Math.random() * colorChoices.length)];
+        endUserOptionColors.set(key, colorIndex);
+        localStorage.setItem('csu_end_user_colors', JSON.stringify(Object.fromEntries(endUserOptionColors)));
+        return colorIndex;
+    }
+
+    function renderEndUserOptions() {
+        const container = document.getElementById('txEndUserOptions');
+        const selectedValue = document.getElementById('txEndUser').value.trim();
+        container.replaceChildren();
+
+        getEndUserOptions().forEach(option => {
+            const choice = document.createElement('div');
+            choice.className = 'enduser-radio-option';
+            const color = getEndUserColorPalette()[getEndUserColorIndex(option)];
+            choice.style.setProperty('--enduser-bg', color.background);
+            choice.style.setProperty('--enduser-selected-bg', color.selected);
+            choice.style.setProperty('--enduser-border', color.border);
+            choice.style.setProperty('--enduser-text', color.text);
+
+            const label = document.createElement('label');
+            const radio = document.createElement('input');
+            radio.type = 'radio';
+            radio.name = 'txEndUserChoice';
+            radio.value = option;
+            radio.checked = option === selectedValue;
+            choice.classList.toggle('selected', radio.checked);
+            radio.addEventListener('change', () => {
+                document.getElementById('txEndUser').value = option;
+                container.querySelectorAll('.enduser-radio-option').forEach(choice => {
+                    choice.classList.toggle('selected', choice.querySelector('input').checked);
+                });
+            });
+
+            const text = document.createElement('span');
+            text.textContent = option;
+            label.append(radio, text);
+            const removeButton = document.createElement('button');
+            removeButton.type = 'button';
+            removeButton.className = 'btn-remove-enduser';
+            removeButton.textContent = '×';
+            removeButton.setAttribute('aria-label', `Remove end-user option ${option}`);
+            removeButton.title = `Remove ${option}`;
+            removeButton.addEventListener('click', () => removeEndUserOption(option));
+
+            choice.append(label, removeButton);
+            container.appendChild(choice);
+        });
+    }
+
+    function removeEndUserOption(option) {
+        if (!confirm(`Remove the end-user option "${option}"?`)) return;
+
+        const normalizedOption = option.toLocaleLowerCase();
+        removedEndUserOptions = removedEndUserOptions.filter(
+            removed => removed.toLocaleLowerCase() !== normalizedOption
+        );
+        removedEndUserOptions.push(option);
+        localStorage.setItem('csu_removed_end_user_options', JSON.stringify(removedEndUserOptions));
+        customEndUserOptions = customEndUserOptions.filter(
+            custom => custom.toLocaleLowerCase() !== normalizedOption
+        );
+        localStorage.setItem('csu_end_user_options', JSON.stringify(customEndUserOptions));
+
+        const txEndUser = document.getElementById('txEndUser');
+        if (txEndUser.value.trim().toLocaleLowerCase() === normalizedOption) {
+            txEndUser.value = '';
+        }
+        renderEndUserOptions();
+    }
+
+    function addEndUserOption() {
+        const option = prompt('Enter a new end-user or ward name:');
+        if (option === null) return;
+
+        const value = option.trim();
+        if (!value) {
+            alert('End-user name cannot be empty.');
+            return;
+        }
+        if (value === '-' || value.toUpperCase() === 'DELIVERY') {
+            alert('That value is reserved and cannot be used as an end-user option.');
+            return;
+        }
+
+        const duplicate = getEndUserOptions().some(existing => existing.toLocaleLowerCase() === value.toLocaleLowerCase());
+        if (duplicate) {
+            alert('That end-user option already exists.');
+            return;
+        }
+
+        customEndUserOptions.push(value);
+        removedEndUserOptions = removedEndUserOptions.filter(
+            removed => removed.toLocaleLowerCase() !== value.toLocaleLowerCase()
+        );
+        localStorage.setItem('csu_end_user_options', JSON.stringify(customEndUserOptions));
+        localStorage.setItem('csu_removed_end_user_options', JSON.stringify(removedEndUserOptions));
+        document.getElementById('txEndUser').value = value;
+        renderEndUserOptions();
     }
 
     function addTransaction() {
@@ -3323,7 +3625,9 @@
         const date = document.getElementById('txDate').value;
         const ref = document.getElementById('txRef').value || '-';
         const qty = parseFloat(document.getElementById('txQty').value) || 0;
-        const endUser = document.getElementById('txEndUser').value || (type === 'DELIVERY' ? 'DELIVERY' : (type === 'COUNT' ? 'Physical Inventory' : '-'));
+        const endUser = type === 'ISSUE'
+            ? (document.getElementById('txEndUser').value || '-')
+            : document.getElementById('txEndUser').value || (type === 'DELIVERY' ? 'DELIVERY' : 'Physical Inventory');
         const daysToConsume = (type === 'ISSUE') ? (document.getElementById('txDays').value || '-') : '-';
 
         if (qty === 0 && type !== 'COUNT') {
@@ -3382,9 +3686,10 @@
 
         if (type === 'DELIVERY' && currentUser && currentUser.permission === 'DELIVERY') {
             document.getElementById('txEndUser').value = 'DELIVERY';
-        } else if (type !== 'DELIVERY') {
+        } else if (type === 'COUNT') {
             document.getElementById('txEndUser').value = '';
         }
+        if (type === 'ISSUE') renderEndUserOptions();
     }
 
     function deleteTransaction(txId) {
