@@ -1,0 +1,64 @@
+(() => {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = '.json,application/json';
+  input.style.display = 'none';
+  document.body.appendChild(input);
+
+  input.onchange = async () => {
+    try {
+      const file = input.files?.[0];
+      if (!file) return;
+
+      const data = JSON.parse(await file.text());
+      if (!data || typeof data !== 'object' || Array.isArray(data)) {
+        throw new Error('Expected a JSON object of Local Storage keys.');
+      }
+
+      const entries = Object.entries(data).map(([key, value]) => {
+        const serialized = typeof value === 'string' ? value : JSON.stringify(value);
+        if (serialized === undefined) throw new Error(`Could not serialize "${key}".`);
+
+        if (key === 'csu_bincards' && !Array.isArray(JSON.parse(serialized))) {
+          throw new Error('"csu_bincards" must contain a JSON array.');
+        }
+
+        return [key, serialized];
+      });
+
+      if (!entries.length) throw new Error('The selected file contains no keys.');
+
+      const keys = entries.map(([key]) => key);
+      if (!confirm(`Import ${entries.length} keys into this site’s Local Storage?\n\n${keys.join('\n')}\n\nMatching keys will be overwritten.`)) {
+        return;
+      }
+
+      // Restore existing values if an import write fails.
+      const previous = entries.map(([key]) => [key, localStorage.getItem(key)]);
+      try {
+        for (const [key, value] of entries) localStorage.setItem(key, value);
+      } catch (error) {
+        for (const [key, value] of previous) {
+          try {
+            if (value === null) localStorage.removeItem(key);
+            else localStorage.setItem(key, value);
+          } catch (rollbackError) {
+            console.error(`Could not restore "${key}".`, rollbackError);
+          }
+        }
+        throw error;
+      }
+
+      console.log(`Imported ${entries.length} Local Storage keys:`, keys);
+      alert('Import complete. The page will now reload.');
+      location.reload();
+    } catch (error) {
+      console.error('Import failed:', error);
+      alert(`Import failed: ${error.message}`);
+    } finally {
+      input.remove();
+    }
+  };
+
+  input.click();
+})();
