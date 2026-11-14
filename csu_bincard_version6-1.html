@@ -1947,7 +1947,7 @@
             <div class="form-section metadata-fields">
             <div class="form-group">
                 <label for="inputItemName">Item Name</label>
-                <input type="text" id="inputItemName" placeholder="e.g. Paracetamol 500mg Tab" required oninput="saveCurrentHeaderDetails()">
+                <input type="text" id="inputItemName" placeholder="e.g. Paracetamol 500mg Tab" required onchange="confirmItemNameChange()">
             </div>
             <div class="form-row-2col">
                 <div class="form-group">
@@ -3253,6 +3253,29 @@
         card.dangerPoint = parseFloat(document.getElementById('inputDangerPoint').value) || 0;
         card.consignor = document.getElementById('inputConsignor').value;
 
+        updateHeaderPreview();
+        renderSidebar();
+        saveToStorage();
+        renderTable();
+    }
+
+    function confirmItemNameChange() {
+        if (!currentUser) return;
+
+        const card = binCards.find(c => c.id === activeCardId);
+        if (!card) return;
+
+        const itemNameInput = document.getElementById('inputItemName');
+        const newName = itemNameInput.value;
+        const oldName = card.itemName || '';
+        if (newName === oldName) return;
+
+        if (oldName && !confirm(`Change item name from "${oldName}" to "${newName}"?`)) {
+            itemNameInput.value = oldName;
+            return;
+        }
+
+        card.itemName = newName;
         updateHeaderPreview();
         renderSidebar();
         saveToStorage();
