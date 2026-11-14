@@ -1041,6 +1041,16 @@
             font-size: 9px;
         }
 
+        .shift-issue-end-user {
+            display: inline-block;
+            white-space: nowrap;
+            margin-right: 12px;
+        }
+
+        .shift-issue-end-user:not(:last-child)::after {
+            content: ";";
+        }
+
         @media (max-width: 1200px) {
             body {
                 padding: 14px;
@@ -1584,6 +1594,43 @@
             body.print-daily-changes .daily-changes-table td {
                 padding: 5px !important;
             }
+
+            body.print-shift-issue-report > :not(#shiftIssueReportModal) {
+                display: none !important;
+            }
+
+            body.print-shift-issue-report #shiftIssueReportModal {
+                position: static !important;
+                display: block !important;
+                padding: 0 !important;
+                background: transparent !important;
+                backdrop-filter: none !important;
+            }
+
+            body.print-shift-issue-report #shiftIssueReportModal .report-modal-card {
+                width: 100% !important;
+                max-width: 100% !important;
+                max-height: none !important;
+                overflow: visible !important;
+                padding: 0 !important;
+                border: 0 !important;
+                box-shadow: none !important;
+            }
+
+            body.print-shift-issue-report #shiftIssueReportControls,
+            body.print-shift-issue-report #shiftIssueReportActions {
+                display: none !important;
+            }
+
+            body.print-shift-issue-report .shift-issue-report-table {
+                font-size: 9pt !important;
+            }
+
+            body.print-shift-issue-report .shift-issue-report-table th,
+            body.print-shift-issue-report .shift-issue-report-table td {
+                padding: 5px !important;
+                text-align: left !important;
+            }
             
             .preview-panel { 
                 box-shadow: none !important; 
@@ -1882,6 +1929,51 @@
     </div>
 </div>
 
+<!-- Issued Supply by Shift Report -->
+<div id="shiftIssueReportModal" class="modal-overlay" style="display: none;">
+    <div class="modal-card report-modal-card">
+        <h2>Issued Supply by Shift</h2>
+        <p id="shiftIssueReportSubtitle" style="font-size: 10.5px; color: #64748b; text-align: center; margin-bottom: 12px;"></p>
+        <p id="shiftIssueReportPrintedBy" style="font-size: 10px; color: #475569; margin-bottom: 10px;"></p>
+        <div id="shiftIssueReportControls" style="background: #f8fafc; padding: 8px 10px; border-radius: var(--radius-sm); border: 1px solid #cbd5e1; margin-bottom: 10px;">
+            <div class="form-row-2col">
+                <div class="form-group">
+                    <label for="shiftIssueReportShift">Duty shift</label>
+                    <select id="shiftIssueReportShift">
+                        <option value="Morning (7 AM - 3 PM)">Morning Shift (7:00 AM - 3:00 PM)</option>
+                        <option value="Evening (3 PM - 11 PM)">Evening Shift (3:00 PM - 11:00 PM)</option>
+                        <option value="Night (11 PM - 7 AM)">Night Shift (11:00 PM - 7:00 AM)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="shiftIssueReportStartDate">Issue date from</label>
+                    <input type="date" id="shiftIssueReportStartDate">
+                </div>
+                <div class="form-group">
+                    <label for="shiftIssueReportEndDate">Issue date to</label>
+                    <input type="date" id="shiftIssueReportEndDate">
+                </div>
+                <div class="form-group" style="align-self: end;">
+                    <button type="button" class="btn-submit" style="margin-top: 0;" onclick="generateShiftIssueReport()">Generate Report</button>
+                </div>
+            </div>
+        </div>
+        <table class="shift-issue-report-table">
+            <thead>
+                <tr>
+                    <th style="width: 45%;">Item Name / Total Issued</th>
+                    <th style="width: 55%;">Ward / End-User Issued To</th>
+                </tr>
+            </thead>
+            <tbody id="shiftIssueReportTableBody"></tbody>
+        </table>
+        <div id="shiftIssueReportActions" style="display: flex; gap: 8px; margin-top: 14px;">
+            <button type="button" class="btn-submit" onclick="printShiftIssueReport()">Print Report</button>
+            <button type="button" class="btn-submit" style="background: #64748b;" onclick="closeShiftIssueReportModal()">Close</button>
+        </div>
+    </div>
+</div>
+
 <!-- Dynamic Floating Pop-Up Notification Banner -->
 <div id="notificationBanner" class="notification-banner">
     <div class="notification-header">
@@ -2119,6 +2211,7 @@
 
             <button class="btn-all-endusers" onclick="openAllEndUsersReportModal()">End-User Report (All Cards)</button>
             <button class="btn-report" onclick="openReportModal()">Single Card Report</button>
+            <button class="btn-report" onclick="openShiftIssueReportModal()">Issued Supply by Shift</button>
             <button class="btn-print" onclick="window.print()">Print Active Bin Card</button>
         </div>
     </div>
@@ -2695,7 +2788,102 @@
 
     window.addEventListener('afterprint', () => {
         document.body.classList.remove('print-daily-changes');
+        document.body.classList.remove('print-shift-issue-report');
     });
+
+    function openShiftIssueReportModal() {
+        const today = getLocalDateKey(new Date());
+        document.getElementById('shiftIssueReportStartDate').value = today;
+        document.getElementById('shiftIssueReportEndDate').value = today;
+        document.getElementById('shiftIssueReportShift').value = currentUser && currentUser.shift
+            ? currentUser.shift
+            : getSystemShift();
+        document.getElementById('shiftIssueReportModal').style.display = 'flex';
+        generateShiftIssueReport();
+    }
+
+    function closeShiftIssueReportModal() {
+        document.body.classList.remove('print-shift-issue-report');
+        document.getElementById('shiftIssueReportModal').style.display = 'none';
+    }
+
+    function generateShiftIssueReport() {
+        const shift = document.getElementById('shiftIssueReportShift').value;
+        const startDate = document.getElementById('shiftIssueReportStartDate').value;
+        const endDate = document.getElementById('shiftIssueReportEndDate').value;
+        if (!startDate || !endDate) {
+            alert('Please select both the start and end issue dates.');
+            return false;
+        }
+        if (startDate > endDate) {
+            alert('The start date must be on or before the end date.');
+            return false;
+        }
+
+        const itemsByCard = new Map();
+        binCards.forEach(card => {
+            const endUserTotals = new Map();
+            let totalIssued = 0;
+            (card.transactions || []).forEach(transaction => {
+                const issueDate = transaction.date || getTransactionAddedDate(transaction);
+                const quantity = Number(transaction.issuedQty);
+                if (
+                    transaction.type !== 'ISSUE' ||
+                    transaction.operatorShift !== shift ||
+                    issueDate < startDate ||
+                    issueDate > endDate ||
+                    !Number.isFinite(quantity) ||
+                    quantity <= 0
+                ) return;
+
+                const endUser = (transaction.endUser || '-').trim() || '-';
+                endUserTotals.set(endUser, (endUserTotals.get(endUser) || 0) + quantity);
+                totalIssued += quantity;
+            });
+            if (totalIssued > 0) itemsByCard.set(card.id, { card, totalIssued, endUserTotals });
+        });
+
+        const shiftLabel = document.getElementById('shiftIssueReportShift')
+            .selectedOptions[0].textContent;
+        document.getElementById('shiftIssueReportSubtitle').textContent =
+            `${shiftLabel} — ${startDate} to ${endDate}`;
+        document.getElementById('shiftIssueReportPrintedBy').textContent =
+            `Printed by: ${currentUser ? currentUser.name : 'Unknown staff'}`;
+
+        const tbody = document.getElementById('shiftIssueReportTableBody');
+        tbody.innerHTML = '';
+        const rows = Array.from(itemsByCard.values()).sort((a, b) =>
+            (a.card.itemName || 'Untitled Item').localeCompare(b.card.itemName || 'Untitled Item')
+        );
+        if (rows.length === 0) {
+            const row = tbody.insertRow();
+            const cell = row.insertCell();
+            cell.colSpan = 2;
+            cell.textContent = 'No issued supplies found for the selected shift and date range.';
+            return true;
+        }
+
+        rows.forEach(({ card, totalIssued, endUserTotals }) => {
+            const row = tbody.insertRow();
+            row.insertCell().textContent = `${card.itemName || 'Untitled Item'} = ${totalIssued.toLocaleString()}`;
+            const endUserCell = row.insertCell();
+            Array.from(endUserTotals.entries())
+                .sort(([nameA], [nameB]) => nameA.localeCompare(nameB))
+                .forEach(([endUser, quantity]) => {
+                    const line = document.createElement('span');
+                    line.className = 'shift-issue-end-user';
+                    line.textContent = `${endUser} = ${quantity.toLocaleString()}`;
+                    endUserCell.appendChild(line);
+                });
+        });
+        return true;
+    }
+
+    function printShiftIssueReport() {
+        if (!generateShiftIssueReport()) return;
+        document.body.classList.add('print-shift-issue-report');
+        window.print();
+    }
 
     function openReportModal() {
         const card = binCards.find(c => c.id === activeCardId);
