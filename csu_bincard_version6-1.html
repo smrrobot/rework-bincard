@@ -40,6 +40,9 @@
             --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1);
             --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
         }
+        html, body {
+            overflow-x: hidden;
+        }
 
         * { 
             box-sizing: border-box; 
@@ -612,7 +615,7 @@
 
         .info-grid {
             display: grid;
-            grid-template-columns: 1.2fr 1fr;
+            grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
             gap: 4px 16px;
             margin-bottom: 10px;
             border: 1.5px solid #000;
@@ -626,9 +629,9 @@
                 font-size:1.2rem;
             }
 
-        .info-field { display: flex; align-items: flex-end; min-height: 18px; }
+        .info-field { display: flex; align-items: flex-end; min-height: 18px; min-width: 0; }
         .info-field label { font-weight: bold; margin-right: 6px; white-space: nowrap; color: #000; }
-        .info-field span { border-bottom: 1px solid #000; flex: 1; padding-left: 4px; font-weight: bold; color: #0f172a; }
+        .info-field span { border-bottom: 1px solid #000; flex: 1; min-width: 0; padding-left: 4px; overflow-wrap: anywhere; font-weight: bold; color: #0f172a; }
         .info-field span.cons-stock { color: #b91c1c; }
 
         .stock-gauge-box {
@@ -758,7 +761,7 @@
 
         .preview-panel table { width: 100%; border-collapse: collapse; margin-top: 4px; table-layout: fixed; }
         .preview-panel table, .preview-panel th, .preview-panel td { border: 1px solid #000; }
-        .preview-panel th, .preview-panel td { padding: 4px 2px; text-align: center; font-size: 9.5px; word-wrap: break-word; color: #000; }
+        .preview-panel th, .preview-panel td { padding: 4px 2px; text-align: center; font-size: 9.5px; word-wrap: break-word; overflow-wrap: anywhere; color: #000; }
         .preview-panel th { background-color: #f1f5f9; font-weight: bold; text-transform: uppercase; font-size: 8.5px; }
         #binCardTable tr:nth-child(1) td:nth-child(6) { font-size: 100%; }
 
@@ -1119,16 +1122,12 @@
                 grid-column: auto;
                 min-width: 0;
                 padding: 14px;
-                overflow-x: auto;
+                overflow-x: hidden;
             }
 
             .official-header {
                 width: 100%;
                 margin-left: 0;
-            }
-
-            .preview-panel table {
-                min-width: 620px;
             }
 
             .info-grid {
@@ -3836,9 +3835,17 @@
         const date = document.getElementById('txDate').value;
         const ref = document.getElementById('txRef').value || '-';
         const qty = parseFloat(document.getElementById('txQty').value) || 0;
+        const txEndUserInput = document.getElementById('txEndUser');
+        const endUserValue = txEndUserInput.value.trim();
+        if (type === 'ISSUE' && (!endUserValue || endUserValue === '-')) {
+            alert('Please select an End-User before recording an issued supply.');
+            const firstEndUserOption = document.querySelector('#txEndUserOptions input[type="radio"]');
+            (firstEndUserOption || document.querySelector('.btn-add-enduser')).focus();
+            return;
+        }
         const endUser = type === 'ISSUE'
-            ? (document.getElementById('txEndUser').value || '-')
-            : document.getElementById('txEndUser').value || (type === 'DELIVERY' ? 'DELIVERY' : 'Physical Inventory');
+            ? endUserValue
+            : endUserValue || (type === 'DELIVERY' ? 'DELIVERY' : 'Physical Inventory');
         const daysToConsume = (type === 'ISSUE') ? (document.getElementById('txDays').value || '-') : '-';
 
         if (qty === 0 && type !== 'COUNT') {
